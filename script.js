@@ -1,264 +1,215 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // Função para formatar o tempo decorrido desde a postagem
-    function formatTimeAgo(isoString) {
-        if (!isoString) return '';
-        const date = new Date(isoString);
-        const now = new Date();
-        const seconds = Math.round((now - date) / 1000);
-        const minutes = Math.round(seconds / 60);
-        const hours = Math.round(minutes / 60);
-        const days = Math.round(hours / 24);
+    const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-        if (seconds < 60) return `agora mesmo`;
-        if (minutes < 60) return `${minutes} min atrás`;
-        if (hours < 24) return `${hours}h atrás`;
-        return `${days}d atrás`;
-    }
-
-    // Função para converter URL do YouTube para URL de embed
-    function getYoutubeEmbedUrl(url) {
-        if (!url) return null;
-        let videoId = null;
-        const shortsRegex = /youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/;
-        const watchRegex = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
-        
-        let match = url.match(shortsRegex);
-        if (match) {
-            videoId = match[1];
-        } else {
-            match = url.match(watchRegex);
-            if (match) {
-                videoId = match[1];
-            }
+    class App {
+        constructor() {
+            this.postsData = [];
+            this.ui = new UI();
+            this.storyPlayer = new StoryPlayer(this.ui.getStoryPlayerDOM(), (storyIndex) => this.postsData[storyIndex]);
         }
-
-        if (videoId) {
-            return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&playsinline=1&showinfo=0&modestbranding=1`;
-        }
-        return null;
-    }
-
-    // Função principal que inicializa a aplicação após carregar os dados
-    async function initializeApp() {
-        try {
-            const response = await fetch('posts.json');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const storiesData = await response.json();
-            
-            // Inicializa os componentes da UI com os dados carregados
-            setupUI(storiesData);
-
-        } catch (error) {
-            console.error("Não foi possível carregar os dados das notícias:", error);
-            const newsGrid = document.getElementById('news-grid');
-            if(newsGrid) {
-                newsGrid.innerHTML = `<p class="col-span-full text-center text-red-500">Erro ao carregar notícias. Tente novamente mais tarde.</p>`;
+        async init() {
+            try {
+                const { data, error } = await supabaseClient.from('posts').select('*').eq('status', 'published').order('timestamp', { ascending: false });
+                if (error) throw error;
+                this.postsData = data;
+                this.ui.renderNewsGrid(this.postsData);
+                this.ui.initializeLazyLoading();
+                this.ui.setupEventListeners((storyIndex) => this.storyPlayer.open(storyIndex));
+                feather.replace();
+            } catch (error) {
+                console.error("Falha ao inicializar a aplicação:", error);
+                this.ui.displayError("Não foi possível carregar as notícias.");
             }
         }
     }
 
-    // Função para configurar a interface do usuário
-    function setupUI(storiesData) {
-        feather.replace();
-
-        // --- Renderização dos Cards de Notícias ---
-        const newsGrid = document.getElementById('news-grid');
-        if (!newsGrid) return;
-        
-        newsGrid.innerHTML = storiesData.map((story, index) => `
-            <div class="news-card relative rounded-xl shadow-lg overflow-hidden cursor-pointer h-[480px] group" data-story-index="${index}">
-                <img src="${story.cardImage}" alt="${story.cardTitle}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-in-out">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                <div class="absolute bottom-0 left-0 p-5 text-white z-10">
-                    <span class="text-white text-xs font-bold px-3 py-1 rounded-full" style="background-color: ${story.categoryColor};">${story.category}</span>
-                    <h2 class="text-xl font-bold mt-2 leading-tight text-shadow">${story.cardTitle}</h2>
-                </div>
-            </div>
-        `).join('');
-
-        // --- Instanciação do Player de Story ---
-        const player = new StoryPlayer(storiesData, {
-            viewerId: 'story-viewer',
-            containerId: 'story-container',
-            mediaContainerId: 'story-media-container',
-            titleId: 'story-title',
-            timeId: 'story-time',
-            indicatorsContainerId: 'story-indicators-container',
-            closeBtnId: 'close-story-btn',
-            nextAreaId: 'next-story-area',
-            prevAreaId: 'prev-story-area',
-            swipeUpId: 'full-story-swipe-up',
-            modalId: 'story-modal',
-            modalOverlayId: 'story-modal-overlay',
-            closeModalBtnId: 'close-modal-btn',
-            modalImageId: 'modal-image',
-            modalTitleId: 'modal-title',
-            modalTextId: 'modal-text',
-        });
-
-        // --- Event Listeners ---
-        newsGrid.addEventListener('click', (e) => {
-            const card = e.target.closest('.news-card');
-            if (card) {
-                player.open(parseInt(card.dataset.storyIndex));
-            }
-        });
-
-        const menuBtn = document.getElementById('menu-btn');
-        const closeMenuBtn = document.getElementById('close-menu-btn');
-        const sideMenu = document.getElementById('side-menu');
-        const menuOverlay = document.getElementById('menu-overlay');
-        
-        const toggleMenu = () => {
-            sideMenu.classList.toggle('open');
-            menuOverlay.classList.toggle('hidden');
-        };
-
-        if(menuBtn) menuBtn.addEventListener('click', toggleMenu);
-        if(closeMenuBtn) closeMenuBtn.addEventListener('click', toggleMenu);
-        if(menuOverlay) menuOverlay.addEventListener('click', toggleMenu);
-    }
-
-    // Classe do Player de Story
-    class StoryPlayer {
-        constructor(storiesData, config) {
-            this.storiesData = storiesData;
-            this.config = config;
-            
+    class UI {
+        constructor() {
             this.dom = {
-                viewer: document.getElementById(config.viewerId),
-                container: document.getElementById(config.containerId),
-                mediaContainer: document.getElementById(config.mediaContainerId),
-                title: document.getElementById(config.titleId),
-                time: document.getElementById(config.timeId),
-                indicatorsContainer: document.getElementById(config.indicatorsContainerId),
-                modal: document.getElementById(config.modalId),
-                modalOverlay: document.getElementById(config.modalOverlayId),
-                modalImage: document.getElementById(config.modalImageId),
-                modalTitle: document.getElementById(config.modalTitleId),
-                modalText: document.getElementById(config.modalTextId),
+                newsGrid: document.getElementById('news-grid'),
+                menuBtn: document.getElementById('menu-btn'),
+                closeMenuBtn: document.getElementById('close-menu-btn'),
+                sideMenu: document.getElementById('side-menu'),
+                menuOverlay: document.getElementById('menu-overlay'),
             };
-
-            this.state = {
-                currentStoryIndex: 0,
-                currentPageIndex: 0,
-            };
-            
-            this.init();
         }
+        renderNewsGrid(postsData) {
+            if (!this.dom.newsGrid) return;
+            this.dom.newsGrid.innerHTML = postsData.map((post, index) => `
+                <div class="news-card relative rounded-xl shadow-lg overflow-hidden cursor-pointer h-[480px] group" data-story-index="${index}" role="button" tabindex="0" aria-label="Abrir story: ${post.cardtitle}">
+                    <img data-src="${post.cardimage}" alt="${post.cardtitle}" class="lazy w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-in-out">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 p-5 text-white z-10">
+                        <span class="text-white text-xs font-bold px-3 py-1 rounded-full" style="background-color: ${post.categorycolor};">${post.category}</span>
+                        <h2 class="text-xl font-bold mt-2 leading-tight text-shadow">${post.cardtitle}</h2>
+                    </div>
+                </div>
+            `).join('');
+        }
+        initializeLazyLoading() {
+            const lazyImages = document.querySelectorAll('img.lazy');
+            if ("IntersectionObserver" in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.classList.remove('lazy');
+                            observer.unobserve(img);
+                        }
+                    });
+                });
+                lazyImages.forEach(img => observer.observe(img));
+            } else { lazyImages.forEach(img => img.src = img.dataset.src); }
+        }
+        setupEventListeners(onCardClick) {
+            this.dom.newsGrid?.addEventListener('click', (e) => {
+                const card = e.target.closest('.news-card');
+                if (card) onCardClick(parseInt(card.dataset.storyIndex));
+            });
+            const toggleMenu = () => {
+                this.dom.sideMenu.classList.toggle('open');
+                this.dom.menuOverlay.classList.toggle('hidden');
+            };
+            this.dom.menuBtn?.addEventListener('click', toggleMenu);
+            this.dom.closeMenuBtn?.addEventListener('click', toggleMenu);
+            this.dom.menuOverlay?.addEventListener('click', toggleMenu);
+        }
+        getStoryPlayerDOM() {
+            return {
+                viewer: document.getElementById('story-viewer'), container: document.getElementById('story-container'),
+                progressContainer: document.getElementById('story-progress-container'), mediaContainer: document.getElementById('story-media-container'),
+                title: document.getElementById('story-title-viewer'), time: document.getElementById('story-time'),
+                closeBtn: document.getElementById('close-story-btn'), shareBtn: document.getElementById('share-story-btn'),
+                nextArea: document.getElementById('next-story-area'), prevArea: document.getElementById('prev-story-area'),
+                swipeUp: document.getElementById('full-story-swipe-up'), modal: document.getElementById('story-modal'),
+                modalOverlay: document.getElementById('story-modal-overlay'), closeModalBtn: document.getElementById('close-modal-btn'),
+                modalImage: document.getElementById('modal-image'), modalTitle: document.getElementById('modal-title'), modalText: document.getElementById('modal-text'),
+            };
+        }
+        displayError(message) { if (this.dom.newsGrid) { this.dom.newsGrid.innerHTML = `<p class="col-span-full text-center text-red-500">${message}</p>`; } }
+    }
 
+    class StoryPlayer {
+        constructor(dom, getStoryDataCallback) {
+            this.dom = dom; this.getStoryData = getStoryDataCallback;
+            this.state = { currentStoryIndex: 0, currentPageIndex: 0, isPaused: false };
+            this.progressTimer = null; this.touchStartX = 0; this.init();
+        }
         init() {
-            document.getElementById(this.config.closeBtnId)?.addEventListener('click', () => this.close());
-            document.getElementById(this.config.nextAreaId)?.addEventListener('click', () => this.nextPage());
-            document.getElementById(this.config.prevAreaId)?.addEventListener('click', () => this.prevPage());
-            
-            document.getElementById(this.config.swipeUpId)?.addEventListener('click', () => this.openModal());
-            document.getElementById(this.config.closeModalBtnId)?.addEventListener('click', () => this.closeModal());
+            this.dom.closeBtn?.addEventListener('click', () => this.close());
+            this.dom.nextArea?.addEventListener('click', () => this.nextPage());
+            this.dom.prevArea?.addEventListener('click', () => this.prevPage());
+            this.dom.swipeUp?.addEventListener('click', () => this.openModal());
+            this.dom.shareBtn?.addEventListener('click', () => this.shareStory());
+            const pauseStory = () => { this.state.isPaused = true; };
+            const resumeStory = () => { this.state.isPaused = false; };
+            this.dom.container.addEventListener('mousedown', pauseStory);
+            this.dom.container.addEventListener('touchstart', pauseStory, { passive: true });
+            this.dom.container.addEventListener('mouseup', resumeStory);
+            this.dom.container.addEventListener('touchend', resumeStory);
+            document.addEventListener('keydown', (e) => {
+                if (this.dom.viewer.classList.contains('open')) {
+                    if (e.key === 'ArrowRight') this.nextPage(); if (e.key === 'ArrowLeft') this.prevPage(); if (e.key === 'Escape') this.close();
+                }
+            });
+            this.dom.closeModalBtn?.addEventListener('click', () => this.closeModal());
             this.dom.modalOverlay?.addEventListener('click', () => this.closeModal());
         }
-
         open(storyIndex) {
-            this.state.currentStoryIndex = storyIndex;
-            this.state.currentPageIndex = 0;
-            this.buildPageIndicators();
-            this.updatePage();
-            this.dom.viewer?.classList.add('open');
-            document.body.style.overflow = 'hidden';
+            this.state.currentStoryIndex = storyIndex; this.state.currentPageIndex = 0; this.state.isPaused = false;
+            this.updatePage(true); this.dom.viewer?.classList.add('open'); document.body.style.overflow = 'hidden';
         }
-
         close() {
-            this.dom.viewer?.classList.remove('open');
-            document.body.style.overflow = '';
-            this.dom.container?.classList.remove('show-cues');
-            this.dom.mediaContainer.innerHTML = ''; // Limpa a mídia para parar vídeos
+            this.dom.viewer?.classList.remove('open'); document.body.style.overflow = '';
+            this.dom.mediaContainer.innerHTML = ''; cancelAnimationFrame(this.progressTimer);
         }
-
-        updatePage() {
-            const story = this.storiesData[this.state.currentStoryIndex];
-            if (!story || !story.pages) return;
-            const page = story.pages[this.state.currentPageIndex];
-            if (!page) return;
-            
-            // --- Lógica de Mídia (Imagem ou Vídeo) ---
-            this.dom.mediaContainer.innerHTML = ''; // Limpa a mídia anterior
-            const embedUrl = getYoutubeEmbedUrl(page.mediaUrl);
-            if (embedUrl) {
-                const iframe = document.createElement('iframe');
-                iframe.src = embedUrl;
-                iframe.className = "w-full h-full";
-                iframe.setAttribute('frameborder', '0');
-                iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
-                iframe.setAttribute('allowfullscreen', '');
-                this.dom.mediaContainer.appendChild(iframe);
-            } else { // Padrão para imagem
-                const img = document.createElement('img');
-                img.src = page.mediaUrl;
-                img.className = "w-full h-full object-cover";
-                img.alt = "Imagem do story";
-                this.dom.mediaContainer.appendChild(img);
-            }
-
-            this.dom.title.innerHTML = page.title;
-            this.dom.time.textContent = formatTimeAgo(story.timestamp);
-
-            this.updatePageIndicators();
-
-            this.dom.container?.classList.remove('show-cues');
-            void this.dom.container?.offsetWidth;  
-            this.dom.container?.classList.add('show-cues');
+        updatePage(isFirstPage = false) {
+            const story = this.getStoryData(this.state.currentStoryIndex);
+            const page = story?.pages?.[this.state.currentPageIndex];
+            if (!page) { this.close(); return; }
+            if(isFirstPage) this.buildProgressBars();
+            this.updateProgressBars();
+            this.dom.mediaContainer.innerHTML = '';
+            const mediaElement = page.mediaType === 'video' ? document.createElement('video') : document.createElement('img');
+            mediaElement.src = page.mediaUrl; mediaElement.className = "w-full h-full object-cover";
+            if (page.mediaType === 'video') { mediaElement.autoplay = true; mediaElement.muted = true; mediaElement.loop = true; mediaElement.playsInline = true; }
+            this.dom.mediaContainer.appendChild(mediaElement);
+            this.dom.title.innerHTML = page.text; this.dom.time.textContent = this.formatTimeAgo(story.timestamp);
+            this.dom.swipeUp.style.display = page.showLink ? 'block' : 'none';
+            this.startProgressBar();
         }
-
         nextPage() {
-            const story = this.storiesData[this.state.currentStoryIndex];
-            if (this.state.currentPageIndex < story.pages.length - 1) {
-                this.state.currentPageIndex++;
-                this.updatePage();
-            } else {
-                this.close();
-            }
+            const story = this.getStoryData(this.state.currentStoryIndex);
+            if (this.state.currentPageIndex < story.pages.length - 1) { this.state.currentPageIndex++; this.updatePage(); } 
+            else { this.close(); }
         }
-
-        prevPage() {
-            if (this.state.currentPageIndex > 0) {
-                this.state.currentPageIndex--;
-                this.updatePage();
-            }
-        }
-
-        buildPageIndicators() {
-            if (!this.dom.indicatorsContainer) return;
-            this.dom.indicatorsContainer.innerHTML = '';
-            this.storiesData[this.state.currentStoryIndex].pages.forEach(() => {
-                const indicator = document.createElement('div');
-                indicator.className = 'story-indicator';
-                this.dom.indicatorsContainer.appendChild(indicator);
+        prevPage() { if (this.state.currentPageIndex > 0) { this.state.currentPageIndex--; this.updatePage(); } }
+        buildProgressBars() {
+            this.dom.progressContainer.innerHTML = '';
+            const story = this.getStoryData(this.state.currentStoryIndex);
+            story.pages.forEach(() => {
+                const bar = document.createElement('div'); bar.className = 'progress-bar';
+                bar.innerHTML = `<div class="progress-bar-inner"></div>`;
+                this.dom.progressContainer.appendChild(bar);
             });
         }
-
-        updatePageIndicators() {
-            const indicators = this.dom.indicatorsContainer?.querySelectorAll('.story-indicator');
-            indicators?.forEach((indicator, index) => {
-                indicator.classList.toggle('active', index === this.state.currentPageIndex);
+        updateProgressBars() {
+            const bars = this.dom.progressContainer.querySelectorAll('.progress-bar-inner');
+            bars.forEach((bar, index) => {
+                bar.style.transform = 'scaleX(0)';
+                if (index < this.state.currentPageIndex) { bar.style.transform = 'scaleX(1)'; }
             });
         }
-
+        startProgressBar() {
+            cancelAnimationFrame(this.progressTimer);
+            const DURATION = 5000; let startTime = null;
+            const bar = this.dom.progressContainer.querySelectorAll('.progress-bar-inner')[this.state.currentPageIndex];
+            if (!bar) return;
+            const animate = (timestamp) => {
+                if (!startTime) startTime = timestamp;
+                if (!this.state.isPaused) {
+                    const elapsed = timestamp - startTime;
+                    const progress = Math.min(elapsed / DURATION, 1);
+                    bar.style.transform = `scaleX(${progress})`;
+                    if (progress >= 1) { this.nextPage(); return; }
+                } else {
+                    const currentProgress = parseFloat(bar.style.transform.replace('scaleX(', ''));
+                    startTime = timestamp - (currentProgress * DURATION);
+                }
+                this.progressTimer = requestAnimationFrame(animate);
+            };
+            this.progressTimer = requestAnimationFrame(animate);
+        }
+        async shareStory() {
+            const story = this.getStoryData(this.state.currentStoryIndex);
+            try {
+                await navigator.share({ title: story.cardtitle, text: `Confira: ${story.cardtitle}`, url: window.location.href });
+            } catch (err) { console.error("Erro ao compartilhar:", err); }
+        }
         openModal() {
-            const content = this.storiesData[this.state.currentStoryIndex].fullContent;
-            if (!content) return;
-            this.dom.modalImage.src = content.image;
-            this.dom.modalTitle.textContent = content.title;
-            this.dom.modalText.innerHTML = content.body; 
-            this.dom.modal?.classList.add('open');
+            const story = this.getStoryData(this.state.currentStoryIndex);
+            if (!story.fullcontent) return;
+            this.state.isPaused = true;
+            this.dom.modalImage.src = story.fullcontent.image || story.cardimage;
+            this.dom.modalTitle.textContent = story.fullcontent.title || story.cardtitle;
+            this.dom.modalText.innerHTML = story.fullcontent.body;
+            this.dom.modal.classList.add('open');
         }
-
-        closeModal() {
-            this.dom.modal?.classList.remove('open');
+        closeModal() { this.dom.modal.classList.remove('open'); this.state.isPaused = false; }
+        formatTimeAgo(isoString) {
+            const seconds = Math.floor((new Date() - new Date(isoString)) / 1000);
+            let interval = seconds / 31536000; if (interval > 1) return Math.floor(interval) + "a";
+            interval = seconds / 2592000; if (interval > 1) return Math.floor(interval) + "m";
+            interval = seconds / 86400; if (interval > 1) return Math.floor(interval) + "d";
+            interval = seconds / 3600; if (interval > 1) return Math.floor(interval) + "h";
+            interval = seconds / 60; if (interval > 1) return Math.floor(interval) + "min";
+            return "agora";
         }
     }
-
-    // Inicia a aplicação
-    initializeApp();
+    const app = new App();
+    app.init();
 });
