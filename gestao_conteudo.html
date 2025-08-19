@@ -16,8 +16,8 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- TinyMCE (Editor WYSIWYG) -->
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- TinyMCE (Editor WYSIWYG) - Chave de API adicionada -->
+    <script src="https://cdn.tiny.cloud/1/gx87tfmvctmsknsdaj797gowrr6jkyljbu6ftne9gduylkja/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -176,7 +176,9 @@
         // --- Configuração do Supabase ---
         const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        // Correção na inicialização do cliente Supabase
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
         let postsData = [];
         let previewPlayer;
@@ -265,7 +267,7 @@
         // --- Lógica de Carregamento e Tabela ---
         async function loadPosts() {
             tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts...</td></tr>`;
-            const { data, error } = await supabase.from('stories').select('*').order('timestamp', { ascending: false });
+            const { data, error } = await supabaseClient.from('stories').select('*').order('timestamp', { ascending: false });
 
             if (error) {
                 console.error('Erro ao buscar posts:', error);
@@ -317,7 +319,7 @@
             if (e.target.classList.contains('delete-btn')) {
                 const post = postsData.find(p => p.id == postId);
                 if (confirm(`Tem certeza que deseja excluir o post "${post.card_title}"?`)) {
-                    const { error } = await supabase.from('stories').delete().eq('id', postId);
+                    const { error } = await supabaseClient.from('stories').delete().eq('id', postId);
                     if (error) {
                         alert('Erro ao excluir o post.');
                         console.error('Delete error:', error);
@@ -435,11 +437,11 @@
             let error;
             if (postId) {
                 // Atualizar post existente
-                const { error: updateError } = await supabase.from('stories').update(postToSave).eq('id', postId);
+                const { error: updateError } = await supabaseClient.from('stories').update(postToSave).eq('id', postId);
                 error = updateError;
             } else {
                 // Inserir novo post
-                const { error: insertError } = await supabase.from('stories').insert(postToSave);
+                const { error: insertError } = await supabaseClient.from('stories').insert(postToSave);
                 error = insertError;
             }
 
