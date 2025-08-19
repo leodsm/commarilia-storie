@@ -267,11 +267,12 @@
         // --- Lógica de Carregamento e Tabela ---
         async function loadPosts() {
             tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts...</td></tr>`;
-            const { data, error } = await supabaseClient.from('stories').select('*').order('timestamp', { ascending: false });
+            // CORREÇÃO: Alterado de 'stories' para 'posts' para corresponder ao nome provável da tabela.
+            const { data, error } = await supabaseClient.from('posts').select('*').order('timestamp', { ascending: false });
 
             if (error) {
                 console.error('Erro ao buscar posts:', error);
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Erro ao carregar os posts.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Erro ao carregar os posts. Verifique se a tabela 'posts' existe no Supabase.</td></tr>`;
                 return;
             }
             postsData = data;
@@ -319,7 +320,7 @@
             if (e.target.classList.contains('delete-btn')) {
                 const post = postsData.find(p => p.id == postId);
                 if (confirm(`Tem certeza que deseja excluir o post "${post.card_title}"?`)) {
-                    const { error } = await supabaseClient.from('stories').delete().eq('id', postId);
+                    const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
                     if (error) {
                         alert('Erro ao excluir o post.');
                         console.error('Delete error:', error);
@@ -437,11 +438,11 @@
             let error;
             if (postId) {
                 // Atualizar post existente
-                const { error: updateError } = await supabaseClient.from('stories').update(postToSave).eq('id', postId);
+                const { error: updateError } = await supabaseClient.from('posts').update(postToSave).eq('id', postId);
                 error = updateError;
             } else {
                 // Inserir novo post
-                const { error: insertError } = await supabaseClient.from('stories').insert(postToSave);
+                const { error: insertError } = await supabaseClient.from('posts').insert(postToSave);
                 error = insertError;
             }
 
