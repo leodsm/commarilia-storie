@@ -1,123 +1,82 @@
-/* --- Configurações Globais --- */
+/* style.css - ComMarília */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
 body {
-    font-family: 'Poppins', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: #f8f9fa;
+  font-family: 'Poppins', sans-serif;
+  background-color: #f8fafc; /* cinza mais claro */
+  color: #1e293b; /* azul-acinzentado escuro */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- Estilos da Marca --- */
-.logo-text-com { color: #F4A261; }
-.logo-text-marilia { color: #1D3557; }
-
-/* --- Efeitos Visuais --- */
-.text-shadow { text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
-.text-shadow-sm { text-shadow: 1px 1px 5px rgba(0,0,0,0.8); }
-
-/* --- Animações e Transições do Menu Lateral --- */
-#side-menu {
-    transform: translateX(-100%);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-#side-menu.open {
-    transform: translateX(0);
+/* Sombra de texto para melhor legibilidade sobre imagens */
+.text-shadow {
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);
 }
 
-/* --- Efeito de Sobreposição para Cards --- */
-.news-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, transparent 70%);
-    transition: opacity 0.3s ease;
+/* Estilo dos Cards de Notícia */
+#news-grid > div {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* --- Animações e Transições do Player de Story --- */
+#news-grid > div:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos do Modal (Visualizador de Matéria) */
 #story-viewer {
-    transform: scale(0.9);
-    opacity: 0;
-    visibility: hidden;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0s 0.3s;
-}
-#story-viewer.open {
-    transform: scale(1);
-    opacity: 1;
-    visibility: visible;
-    transition-delay: 0s;
+  backdrop-filter: blur(4px);
 }
 
-/* --- Efeito de Sobreposição no Conteúdo do Story --- */
-#story-container::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
-    z-index: 1;
+#story-content h2 {
+    font-size: 1.875rem; /* 30px */
+    font-weight: 700;
+    margin-top: 1.5rem; /* 24px */
+    margin-bottom: 1rem; /* 16px */
+    color: #1e293b;
 }
 
-/* --- Animações e Transições do Modal --- */
-#story-modal {
-    visibility: hidden;
-    background-color: rgba(0, 0, 0, 0.5);
-    transition: visibility 0s 0.4s, background-color 0.4s ease;
-}
-#story-modal.open {
-    visibility: visible;
-    transition-delay: 0s;
-}
-#story-modal-content {
-    transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-#story-modal.open #story-modal-content {
-    transform: translateY(0);
+#story-content h3 {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 600;
+    margin-top: 1.25rem; /* 20px */
+    margin-bottom: 0.75rem; /* 12px */
+    color: #334155;
 }
 
-/* --- Dicas Visuais de Navegação --- */
-.story-cue {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    color: white;
-    background-color: rgba(0, 0, 0, 0.4);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none; /* Impede que interfiram nos cliques */
-}
-#prev-cue { left: 16px; }
-#next-cue { right: 16px; }
-
-/* Animação para as dicas visuais */
-@keyframes pulse-and-fade {
-    0% { opacity: 0; transform: translateY(-50%) scale(0.8); }
-    20%, 60% { opacity: 0.9; transform: translateY(-50%) scale(1.1); }
-    40%, 80% { opacity: 0.9; transform: translateY(-50%) scale(1); }
-    100% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+#story-content p {
+    font-size: 1rem; /* 16px */
+    line-height: 1.75;
+    margin-bottom: 1rem; /* 16px */
+    color: #475569;
 }
 
-/* Ativa a animação quando a classe é adicionada */
-.show-cues .story-cue {
-    animation: pulse-and-fade 2.5s ease-in-out forwards;
+#story-content ul, #story-content ol {
+    margin-left: 1.25rem; /* 20px */
+    margin-bottom: 1rem; /* 16px */
+    color: #475569;
 }
 
-/* --- Indicadores de Página (Círculos) --- */
-.story-indicator {
-    width: 8px;
-    height: 8px;
-    background-color: rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    transition: all 0.4s ease;
-}
-.story-indicator.active {
-    background-color: white;
-    transform: scale(1.2);
+#story-content li {
+    margin-bottom: 0.5rem; /* 8px */
 }
 
-/* --- Utilitário para Esconder Barra de Rolagem --- */
-.hide-scrollbar::-webkit-scrollbar { display: none; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Estilos do Formulário de Gestão */
+#story-form input[type="text"],
+#story-form input[type="url"],
+#story-form textarea,
+#story-form select {
+  background-color: #fff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#story-form input:focus,
+#story-form textarea:focus,
+#story-form select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
