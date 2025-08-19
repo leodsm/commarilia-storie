@@ -176,7 +176,6 @@
         // --- Configuração do Supabase ---
         const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
-        // Correção na inicialização do cliente Supabase
         const { createClient } = supabase;
         const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
@@ -267,7 +266,6 @@
         // --- Lógica de Carregamento e Tabela ---
         async function loadPosts() {
             tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts...</td></tr>`;
-            // CORREÇÃO: Alterado de 'stories' para 'posts' para corresponder ao nome provável da tabela.
             const { data, error } = await supabaseClient.from('posts').select('*').order('timestamp', { ascending: false });
 
             if (error) {
