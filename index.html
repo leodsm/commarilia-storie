@@ -1,136 +1,150 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ComMarília - Player de Story Otimizado</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Poppins -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
-
-    <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComMarília - Player de Story</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-100 text-gray-800">
-
-    <!-- Menu Lateral -->
-    <aside id="side-menu" class="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-[70]">
-        <div class="p-6 flex justify-between items-center border-b">
-            <div class="text-xl font-black">
-                <span class="logo-text-com">Com</span><span class="logo-text-marilia">Marília.</span>
-            </div>
-            <button id="close-menu-btn" class="text-gray-500 hover:text-gray-800" aria-label="Fechar menu">
-                <i data-feather="x" class="w-6 h-6"></i>
-            </button>
-        </div>
-        <nav class="p-6">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Categorias</h2>
-            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="home" class="w-5 h-5"></i><span>Início</span></a>
-            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="globe" class="w-5 h-5"></i><span>Mundo</span></a>
-            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="trending-up" class="w-5 h-5"></i><span>Economia</span></a>
-            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="award" class="w-5 h-5"></i><span>Esportes</span></a>
-            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="at-sign" class="w-5 h-5"></i><span>Contato</span></a>
-        </nav>
-    </aside>
-    <div id="menu-overlay" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden backdrop-blur-sm"></div>
-
-    <!-- Cabeçalho Principal -->
-    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center max-w-5xl">
-            <button id="menu-btn" class="text-gray-600 hover:text-gray-900 focus:outline-none" aria-label="Abrir menu">
-                <i data-feather="menu" class="w-6 h-6"></i>
-            </button>
-            <div class="text-2xl font-black">
-                <span class="logo-text-com">Com</span><span class="logo-text-marilia">Marília.</span>
-            </div>
-            <button class="text-gray-600 hover:text-gray-900 focus:outline-none" aria-label="Perfil do usuário">
-                <i data-feather="user" class="w-6 h-6"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Conteúdo Principal com os Cards de Notícias -->
-    <main class="container mx-auto px-4 py-8 max-w-5xl">
-        <h1 class="text-3xl font-bold mb-6 text-gray-900">Últimas Notícias</h1>
-        <div id="news-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Cards de Notícias são gerados dinamicamente pelo JS -->
-        </div>
-    </main>
-
-    <!-- Player de Web Story -->
-    <div id="story-viewer" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <div id="story-container" class="relative w-full h-full sm:max-w-[414px] sm:h-[90vh] sm:max-h-[896px] bg-gray-900 sm:rounded-xl overflow-hidden shadow-2xl">
-            
-            <!-- Contêiner de Mídia (Imagem ou Vídeo) -->
-            <div id="story-media-container" class="w-full h-full absolute inset-0"></div>
-            
-            <!-- Cabeçalho do Story -->
-            <header class="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20">
-                <img id="story-publisher-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo do ComMarília">
-                <div>
-                    <div id="story-publisher-name" class="font-bold text-white text-sm">ComMarília</div>
-                    <div id="story-time" class="text-white/80 text-xs"></div>
-                </div>
-            </header>
-
-            <!-- Texto do Story -->
-            <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
-                <div id="story-title" class="text-2xl font-bold leading-tight text-shadow"></div>
-            </div>
-
-            <!-- Áreas de Navegação (Anterior/Próximo) -->
-            <div id="prev-story-area" class="absolute left-0 top-0 h-full w-1/4 cursor-pointer z-30"></div>
-            <div id="next-story-area" class="absolute right-0 top-0 h-full w-3/4 cursor-pointer z-30"></div>
-            
-            <!-- Dicas Visuais de Navegação -->
-            <div id="prev-cue" class="story-cue"><i data-feather="chevron-left" class="w-7 h-7"></i></div>
-            <div id="next-cue" class="story-cue"><i data-feather="chevron-right" class="w-7 h-7"></i></div>
-
-            <!-- Botões de Ação -->
-            <button id="close-story-btn" class="absolute top-4 right-4 text-white z-30 bg-black/30 rounded-full p-2" aria-label="Fechar story">
-                <i data-feather="x" class="w-6 h-6"></i>
-            </button>
-            <div id="full-story-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer">
-                <div class="inline-flex flex-col items-center gap-1 text-white animate-bounce">
-                    <i data-feather="chevron-up" class="w-6 h-6"></i>
-                    <span class="font-semibold text-sm">Matéria Completa</span>
-                </div>
-            </div>
-
-            <!-- Indicadores de Página (Círculos) -->
-            <div id="story-indicators-container" class="absolute bottom-4 left-0 w-full flex justify-center items-center gap-2 z-20"></div>
-        </div>
+<body class="bg-gray-50">
+  <header class="p-4 text-center font-bold text-2xl text-slate-800">
+    Com<span class="text-orange-500">Marília</span>
+  </header>
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-semibold mb-6 text-slate-700">Últimas Notícias</h2>
+    <!-- O grid de notícias será preenchido dinamicamente -->
+    <div id="news-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Exemplo de card enquanto carrega -->
+        <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
+        <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
+        <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
     </div>
+  </main>
 
-    <!-- Modal da Matéria Completa -->
-    <div id="story-modal" class="fixed inset-0 z-[80] flex items-end sm:items-start sm:pt-12 justify-center">
-        <div id="story-modal-overlay" class="absolute inset-0"></div>
-        <div id="story-modal-content" class="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] sm:max-h-[calc(100vh-4rem)] overflow-y-auto hide-scrollbar">
-            <header class="sticky top-0 bg-white/80 backdrop-blur-lg p-2 z-10 text-center">
-                <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto"></div>
-                <button id="close-modal-btn" class="absolute top-2 right-3 text-gray-500 hover:text-black" aria-label="Fechar matéria">
-                    <i data-feather="x" class="w-7 h-7"></i>
-                </button>
-            </header>
-            <article>
-                <img id="modal-image" src="" class="w-full h-64 object-cover" alt="Imagem da matéria">
-                <div class="p-6 md:p-8">
-                    <h2 id="modal-title" class="text-3xl font-bold mb-4 leading-tight text-gray-900"></h2>
-                    <div id="modal-text" class="text-gray-700 space-y-4 text-base leading-relaxed prose max-w-none"></div>
-                </div>
-            </article>
-        </div>
+  <!-- Modal/Player para exibir a matéria completa -->
+  <div id="story-viewer" class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center p-4 hidden z-50">
+    <div class="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-y-auto max-h-[90vh]">
+      <div id="story-content" class="p-8">
+        <!-- O conteúdo da matéria será inserido aqui -->
+      </div>
+      <button id="close-story" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
     </div>
+  </div>
 
-    <!-- Custom Script -->
-    <script src="script.js"></script>
+  <script>
+    // Configuração do cliente Supabase
+    const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Elementos da página
+    const grid = document.getElementById('news-grid');
+    const viewer = document.getElementById('story-viewer');
+    const storyContent = document.getElementById('story-content');
+    const closeBtn = document.getElementById('close-story');
+
+    /**
+     * Converte o JSON do Editor.js para HTML.
+     * @param {object} editorData - O objeto de dados salvo pelo Editor.js.
+     * @returns {string} - Uma string HTML formatada.
+     */
+    function renderEditorJsData(editorData) {
+        let html = '';
+        if (!editorData || !editorData.blocks) {
+            return '<p>Conteúdo indisponível.</p>';
+        }
+        editorData.blocks.forEach(block => {
+            switch (block.type) {
+                case 'header':
+                    html += `<h${block.data.level} class="text-2xl font-bold my-4">${block.data.text}</h${block.data.level}>`;
+                    break;
+                case 'paragraph':
+                    html += `<p class="my-4 text-gray-700 leading-relaxed">${block.data.text}</p>`;
+                    break;
+                case 'list':
+                    const listTag = block.data.style === 'ordered' ? 'ol' : 'ul';
+                    html += `<${listTag} class="list-disc list-inside my-4 space-y-2">`;
+                    block.data.items.forEach(item => {
+                        html += `<li>${item}</li>`;
+                    });
+                    html += `</${listTag}>`;
+                    break;
+                default:
+                    console.warn('Tipo de bloco não suportado:', block.type);
+            }
+        });
+        return html;
+    }
+
+    /**
+     * Busca as matérias no Supabase e as renderiza na página.
+     */
+    async function fetchAndRenderStories() {
+        // Busca na tabela 'stories', ordenando pelas mais recentes
+        const { data: stories, error } = await supabase
+            .from('stories')
+            .select('*')
+            .order('timestamp', { ascending: false });
+
+        if (error) {
+            console.error('Erro ao buscar matérias:', error);
+            grid.innerHTML = `<p class="text-red-500 col-span-full">Não foi possível carregar as notícias. Tente novamente mais tarde.</p>`;
+            return;
+        }
+
+        if (stories.length === 0) {
+            grid.innerHTML = `<p class="text-gray-500 col-span-full">Nenhuma notícia encontrada.</p>`;
+            return;
+        }
+
+        // Limpa o grid antes de adicionar os novos cards
+        grid.innerHTML = '';
+
+        stories.forEach(story => {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105';
+            
+            card.innerHTML = `
+                <img src="${story.card_image}" alt="${story.card_title}" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/31343C?text=Imagem';">
+                <div class="p-4">
+                    <span class="text-xs font-semibold uppercase" style="color:${story.category_color};">${story.category}</span>
+                    <h3 class="text-lg font-semibold mt-1 text-slate-800">${story.card_title}</h3>
+                </div>
+            `;
+
+            // Adiciona o evento de clique para abrir a matéria
+            card.addEventListener('click', () => {
+                // O conteúdo da matéria está salvo como um JSON string, então precisamos fazer o parse
+                const contentData = JSON.parse(story.content);
+                storyContent.innerHTML = renderEditorJsData(contentData);
+                viewer.classList.remove('hidden');
+            });
+
+            grid.appendChild(card);
+        });
+    }
+
+    // Funções para controlar o modal
+    function closeViewer() {
+        viewer.classList.add('hidden');
+        storyContent.innerHTML = '';
+    }
+
+    closeBtn.addEventListener('click', closeViewer);
+    
+    // Fecha o modal se clicar fora do conteúdo
+    viewer.addEventListener('click', (e) => {
+        if (e.target === viewer) {
+            closeViewer();
+        }
+    });
+
+    // Inicia o carregamento das matérias quando a página carregar
+    document.addEventListener('DOMContentLoaded', fetchAndRenderStories);
+  </script>
 </body>
 </html>
