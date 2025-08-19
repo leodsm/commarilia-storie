@@ -16,7 +16,7 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- TinyMCE (Editor WYSIWYG) - Chave de API adicionada -->
+    <!-- TinyMCE (Editor WYSIWYG) -->
     <script src="https://cdn.tiny.cloud/1/gx87tfmvctmsknsdaj797gowrr6jkyljbu6ftne9gduylkja/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
     <!-- Supabase JS -->
@@ -53,7 +53,7 @@
                         </tr>
                     </thead>
                     <tbody id="posts-table-body" class="text-gray-700">
-                        <tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts do Supabase...</td></tr>
+                        <tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -77,22 +77,22 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="category" class="font-semibold text-sm text-gray-700 block mb-1">Categoria</label>
-                                <input type="text" id="category" placeholder="Ex: TECNOLOGIA" class="w-full p-3 border rounded-lg" required>
+                                <input type="text" id="category" class="w-full p-3 border rounded-lg" required>
                             </div>
                              <div>
-                                <label for="categoryColor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label>
+                                <label for="categorycolor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label>
                                 <div class="flex items-center gap-2">
                                     <input type="color" id="categoryColorValue" class="h-12 w-14 p-1 border rounded-lg cursor-pointer" value="#2563eb">
-                                    <input type="text" id="categoryColor" placeholder="Ex: #2563eb" class="w-full p-3 border rounded-lg" required>
+                                    <input type="text" id="categorycolor" class="w-full p-3 border rounded-lg" required>
                                 </div>
                             </div>
                             <div>
-                                <label for="cardTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label>
-                                <input type="text" id="cardTitle" placeholder="Título que aparece na página inicial" class="w-full p-3 border rounded-lg" required>
+                                <label for="cardtitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label>
+                                <input type="text" id="cardtitle" class="w-full p-3 border rounded-lg" required>
                             </div>
                             <div>
-                                <label for="cardImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem do Card</label>
-                                <input type="url" id="cardImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
+                                <label for="cardimage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem do Card</label>
+                                <input type="url" id="cardimage" class="w-full p-3 border rounded-lg" required>
                             </div>
                         </div>
                     </div>
@@ -102,15 +102,15 @@
                         <div class="space-y-4">
                            <div>
                                 <label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label>
-                                <input type="text" id="fullContentTitle" placeholder="Título que aparece na matéria completa" class="w-full p-3 border rounded-lg" required>
+                                <input type="text" id="fullContentTitle" class="w-full p-3 border rounded-lg" required>
                             </div>
                             <div>
                                 <label for="fullContentImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem da Matéria</label>
-                                <input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
+                                <input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" required>
                             </div>
                             <div>
                                 <label for="fullContentBody" class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label>
-                                <textarea id="fullContentBody" placeholder="Use o editor para formatar o texto..."></textarea>
+                                <textarea id="fullContentBody"></textarea>
                             </div>
                         </div>
                     </div>
@@ -156,8 +156,8 @@
                         <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
                             <div id="story-preview-text" class="text-2xl font-bold leading-tight text-shadow"></div>
                         </div>
-                        <div id="preview-prev-area" class="absolute left-0 top-0 h-full w-1/4 cursor-pointer z-30"></div>
-                        <div id="preview-next-area" class="absolute right-0 top-0 h-full w-3/4 cursor-pointer z-30"></div>
+                        <div id="preview-prev-area" class="absolute left-0 top-0 h-full w-1/3 cursor-pointer z-30"></div>
+                        <div id="preview-next-area" class="absolute right-0 top-0 h-full w-2/3 cursor-pointer z-30"></div>
                         <div id="story-preview-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer hidden">
                             <div class="inline-flex flex-col items-center gap-1 text-white animate-bounce">
                                 <i data-feather="chevron-up" class="w-6 h-6"></i>
@@ -186,7 +186,6 @@
         let postsData = [];
         let previewPlayer;
         
-        // --- Inicialização do Editor WYSIWYG ---
         tinymce.init({
             selector: 'textarea#fullContentBody',
             plugins: 'code lists link image table media autoresize',
@@ -198,7 +197,6 @@
             }
         });
 
-        // --- DOM Elements ---
         const addPostBtn = document.getElementById('add-post-btn');
         const tableBody = document.getElementById('posts-table-body');
         const modal = document.getElementById('post-modal');
@@ -208,11 +206,10 @@
         const addPageBtn = document.getElementById('add-page-btn');
         const pagesContainer = document.getElementById('pages-container');
         const colorPicker = document.getElementById('categoryColorValue');
-        const colorText = document.getElementById('categoryColor');
+        const colorText = document.getElementById('categorycolor');
         const cancelBtn = document.getElementById('cancel-btn');
         const saveBtn = document.getElementById('save-btn');
 
-        // --- Live Preview Player ---
         class PreviewPlayer {
             constructor(domElements) { this.dom = domElements; this.currentPost = null; this.currentPageIndex = 0; this.init(); }
             init() { this.dom.prevArea.addEventListener('click', () => this.prevPage()); this.dom.nextArea.addEventListener('click', () => this.nextPage()); }
@@ -220,11 +217,8 @@
             updatePage() {
                 if (!this.currentPost?.pages?.[this.currentPageIndex]) {
                     this.dom.media.src = 'https://placehold.co/375x812/111827/4b5563?text=Preview';
-                    this.dom.media.style.display = 'block';
-                    this.dom.video.style.display = 'none';
-                    this.dom.text.innerHTML = '';
-                    this.dom.swipeUp.style.display = 'none';
-                    return;
+                    this.dom.media.style.display = 'block'; this.dom.video.style.display = 'none';
+                    this.dom.text.innerHTML = ''; this.dom.swipeUp.style.display = 'none'; return;
                 }
                 const page = this.currentPost.pages[this.currentPageIndex];
                 this.dom.media.style.display = 'none'; this.dom.video.style.display = 'none';
@@ -260,21 +254,19 @@
         function updatePreview() {
             const pages = Array.from(pagesContainer.querySelectorAll('.page-item')).map(el => {
                 const mediaUrl = el.querySelector('.page-media-url').value;
-                return { mediaUrl, mediaType: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', text: el.querySelector('.page-text').value, showLink: el.querySelector('.page-show-link').checked, };
+                return { mediaUrl, mediaType: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', text: el.querySelector('.page-text').value, showLink: el.querySelector('.page-show-link').checked };
             });
             previewPlayer.loadStory({ pages });
         }
         postForm.addEventListener('input', updatePreview);
         postForm.addEventListener('change', updatePreview);
 
-        // --- Lógica de Carregamento e Tabela ---
         async function loadPosts() {
             tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts...</td></tr>`;
             const { data, error } = await supabaseClient.from('posts').select('*').order('timestamp', { ascending: false });
-
             if (error) {
                 console.error('Erro ao buscar posts:', error);
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Erro ao carregar os posts. Verifique se a tabela 'posts' existe no Supabase.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Erro ao carregar. Verifique o nome da tabela e as permissões.</td></tr>`;
                 return;
             }
             postsData = data;
@@ -283,24 +275,19 @@
 
         function formatDateTime(isoString) {
             if (!isoString) return 'N/A';
-            const date = new Date(isoString);
-            return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return new Date(isoString).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
         function renderTable() {
             if (postsData.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado. Clique em "Adicionar Novo Post".</td></tr>`;
-                return;
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado.</td></tr>`; return;
             }
             tableBody.innerHTML = postsData.map(post => {
                 const statusClasses = { published: 'bg-green-100 text-green-800', draft: 'bg-yellow-100 text-yellow-800' };
                 const statusText = { published: 'Publicado', draft: 'Rascunho' };
                 return `
                 <tr class="border-b">
-                    <td class="py-3 px-4">
-                        <div class="font-semibold">${post.cardtitle}</div>
-                        <div class="text-xs text-gray-500">${post.category}</div>
-                    </td>
+                    <td class="py-3 px-4"><div class="font-semibold">${post.cardtitle}</div><div class="text-xs text-gray-500">${post.category}</div></td>
                     <td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td>
                     <td class="py-3 px-4">${post.pages?.length || 0}</td>
                     <td class="py-3 px-4 text-sm text-gray-600">${formatDateTime(post.timestamp)}</td>
@@ -315,25 +302,17 @@
         tableBody.addEventListener('click', async (e) => {
             const postId = e.target.dataset.id;
             if (!postId) return;
-
-            if (e.target.classList.contains('edit-btn')) {
-                openModalForEdit(postId);
-            }
+            if (e.target.classList.contains('edit-btn')) openModalForEdit(postId);
             if (e.target.classList.contains('delete-btn')) {
                 const post = postsData.find(p => p.id == postId);
                 if (confirm(`Tem certeza que deseja excluir o post "${post.cardtitle}"?`)) {
                     const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
-                    if (error) {
-                        alert('Erro ao excluir o post.');
-                        console.error('Delete error:', error);
-                    } else {
-                        loadPosts(); // Recarrega a tabela
-                    }
+                    if (error) { alert('Erro ao excluir o post.'); console.error('Delete error:', error); } 
+                    else { loadPosts(); }
                 }
             }
         });
 
-        // --- Lógica do Modal ---
         function openModalForAdd() {
             postForm.reset();
             document.getElementById('post-id').value = '';
@@ -354,24 +333,20 @@
             postForm.reset();
             document.getElementById('post-id').value = post.id;
             modalTitle.textContent = 'Editar Post';
-            
             document.getElementById('category').value = post.category;
             colorPicker.value = post.categorycolor;
             colorText.value = post.categorycolor;
-            document.getElementById('cardTitle').value = post.cardtitle;
-            document.getElementById('cardImage').value = post.cardimage;
+            document.getElementById('cardtitle').value = post.cardtitle;
+            document.getElementById('cardimage').value = post.cardimage;
             document.getElementById('fullContentTitle').value = post.fullcontent?.title || '';
             document.getElementById('fullContentImage').value = post.fullcontent?.image || '';
             tinymce.get('fullContentBody').setContent(post.fullcontent?.body || '');
-
             pagesContainer.innerHTML = '';
             post.pages?.forEach(page => addPageField(page.mediaUrl, page.text, page.showLink));
-            
             document.getElementById('status').value = post.status;
             const date = new Date(post.timestamp);
             date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
             document.getElementById('timestamp').value = date.toISOString().slice(0, 16);
-
             modal.classList.remove('hidden');
             updatePreview();
         }
@@ -383,25 +358,15 @@
         colorPicker.addEventListener('input', (e) => colorText.value = e.target.value);
         colorText.addEventListener('input', (e) => colorPicker.value = e.target.value);
 
-        // --- Lógica das Páginas Dinâmicas ---
         addPageBtn.addEventListener('click', () => addPageField());
         function addPageField(mediaUrl = '', text = '', showLink = true) {
             const pageDiv = document.createElement('div');
             pageDiv.className = 'p-4 bg-white rounded-lg border space-y-4 page-item';
             pageDiv.innerHTML = `
-                <div>
-                    <label class="font-semibold text-sm text-gray-700 block mb-1">URL da Mídia da Página</label>
-                    <input type="url" class="page-media-url w-full p-2 border rounded-md" placeholder="URL da Imagem ou Vídeo (.mp4)" value="${mediaUrl}" required>
-                </div>
-                <div>
-                    <label class="font-semibold text-sm text-gray-700 block mb-1">Texto da Página</label>
-                    <textarea class="page-text w-full p-2 border rounded-md h-24" placeholder="Subtítulo/Texto (pode usar HTML)">${text}</textarea>
-                </div>
+                <div><label class="font-semibold text-sm text-gray-700 block mb-1">URL da Mídia da Página</label><input type="url" class="page-media-url w-full p-2 border rounded-md" value="${mediaUrl}" required></div>
+                <div><label class="font-semibold text-sm text-gray-700 block mb-1">Texto da Página</label><textarea class="page-text w-full p-2 border rounded-md h-24">${text}</textarea></div>
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" class="page-show-link h-4 w-4 rounded" ${showLink ? 'checked' : ''}>
-                        <label class="text-sm">Mostrar link para Matéria</label>
-                    </div>
+                    <div class="flex items-center gap-2"><input type="checkbox" class="page-show-link h-4 w-4 rounded" ${showLink ? 'checked' : ''}><label class="text-sm">Mostrar link para Matéria</label></div>
                     <button type="button" class="remove-page-btn text-red-500 hover:text-red-700 font-bold">Remover</button>
                 </div>`;
             pagesContainer.appendChild(pageDiv);
@@ -411,23 +376,19 @@
             if (e.target.classList.contains('remove-page-btn')) { e.target.closest('.page-item').remove(); updatePreview(); }
         });
 
-        // --- Lógica de Submissão ---
         saveBtn.addEventListener('click', async () => {
             const postId = document.getElementById('post-id').value;
-
             const pages = Array.from(pagesContainer.querySelectorAll('.page-item')).map((el) => {
                 const mediaUrl = el.querySelector('.page-media-url').value;
-                return { mediaUrl, mediaType: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', text: el.querySelector('.page-text').value, showLink: el.querySelector('.page-show-link').checked, };
+                return { mediaUrl, mediaType: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', text: el.querySelector('.page-text').value, showLink: el.querySelector('.page-show-link').checked };
             }).filter(p => p.mediaUrl);
-
             if (pages.length === 0) { alert('Adicione pelo menos uma página ao story.'); return; }
 
-            // Objeto de dados para o Supabase com os nomes corretos das colunas
             const postToSave = {
                 category: document.getElementById('category').value,
-                categorycolor: document.getElementById('categoryColor').value,
-                cardimage: document.getElementById('cardImage').value,
-                cardtitle: document.getElementById('cardTitle').value,
+                categorycolor: document.getElementById('categorycolor').value,
+                cardimage: document.getElementById('cardimage').value,
+                cardtitle: document.getElementById('cardtitle').value,
                 timestamp: new Date(document.getElementById('timestamp').value).toISOString(),
                 status: document.getElementById('status').value,
                 pages: pages,
@@ -438,27 +399,14 @@
                 }
             };
 
-            let error;
-            if (postId) {
-                // Atualizar post existente
-                const { error: updateError } = await supabaseClient.from('posts').update(postToSave).eq('id', postId);
-                error = updateError;
-            } else {
-                // Inserir novo post
-                const { error: insertError } = await supabaseClient.from('posts').insert(postToSave);
-                error = insertError;
-            }
+            const { error } = postId
+                ? await supabaseClient.from('posts').update(postToSave).eq('id', postId)
+                : await supabaseClient.from('posts').insert(postToSave);
 
-            if (error) {
-                alert('Erro ao salvar o post.');
-                console.error('Save error:', error);
-            } else {
-                closeModal();
-                loadPosts(); // Recarrega a tabela
-            }
+            if (error) { alert('Erro ao salvar o post.'); console.error('Save error:', error); } 
+            else { closeModal(); loadPosts(); }
         });
         
-        // --- Carga Inicial ---
         loadPosts();
         feather.replace();
     });
