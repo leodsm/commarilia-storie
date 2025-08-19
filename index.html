@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ComMarília - Player de Story</title>
+  <title>ComMarília - Notícias</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- CSS -->
+  <!-- CSS Externo -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-50">
@@ -16,98 +16,156 @@
   </header>
   <main class="max-w-5xl mx-auto px-4 py-8">
     <h2 class="text-2xl font-semibold mb-6 text-slate-700">Últimas Notícias</h2>
-    <!-- O grid de notícias será preenchido dinamicamente -->
     <div id="news-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Exemplo de card enquanto carrega -->
+        <!-- Cards de carregamento -->
         <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
         <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
         <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
     </div>
   </main>
 
-  <!-- Modal/Player para exibir a matéria completa -->
-  <div id="story-viewer" class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center p-4 hidden z-50">
-    <div class="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-y-auto max-h-[90vh]">
-      <div id="story-content" class="p-8">
-        <!-- O conteúdo da matéria será inserido aqui -->
+  <!-- Player de Story -->
+  <div id="story-viewer" class="fixed inset-0 bg-black bg-opacity-95 z-50 flex justify-center items-center hidden">
+    <div class="relative w-full max-w-md h-full max-h-[95vh] aspect-[9/16] bg-gray-900 rounded-lg overflow-hidden">
+      <!-- Barras de Progresso -->
+      <div id="progress-bars" class="absolute top-2 left-2 right-2 h-1 flex gap-1 z-20"></div>
+      
+      <!-- Conteúdo do Story -->
+      <div id="story-media-container" class="w-full h-full"></div>
+      
+      <!-- Overlay com Texto -->
+      <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/70 to-transparent z-10">
+        <div id="story-text" class="text-white text-2xl font-bold text-shadow"></div>
       </div>
-      <button id="close-story" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+      
+      <!-- Controles de Navegação -->
+      <div class="absolute top-0 left-0 w-1/3 h-full z-20" id="story-prev"></div>
+      <div class="absolute top-0 right-0 w-2/3 h-full z-20" id="story-next"></div>
+      
+      <button id="close-story" class="absolute top-3 right-3 text-white text-4xl z-30">&times;</button>
     </div>
   </div>
 
   <script>
-    // Configuração do cliente Supabase
+    // --- Configuração do Supabase ---
     const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const { createClient } = supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-    // Elementos da página
+    // --- Elementos DOM ---
     const grid = document.getElementById('news-grid');
     const viewer = document.getElementById('story-viewer');
-    const storyContent = document.getElementById('story-content');
+    const progressBarsContainer = document.getElementById('progress-bars');
+    const storyMediaContainer = document.getElementById('story-media-container');
+    const storyText = document.getElementById('story-text');
     const closeBtn = document.getElementById('close-story');
+    const prevBtn = document.getElementById('story-prev');
+    const nextBtn = document.getElementById('story-next');
 
-    /**
-     * Converte o JSON do Editor.js para HTML.
-     * @param {object} editorData - O objeto de dados salvo pelo Editor.js.
-     * @returns {string} - Uma string HTML formatada.
-     */
-    function renderEditorJsData(editorData) {
-        let html = '';
-        if (!editorData || !editorData.blocks) {
-            return '<p>Conteúdo indisponível.</p>';
-        }
-        editorData.blocks.forEach(block => {
-            switch (block.type) {
-                case 'header':
-                    html += `<h${block.data.level} class="text-2xl font-bold my-4">${block.data.text}</h${block.data.level}>`;
-                    break;
-                case 'paragraph':
-                    html += `<p class="my-4 text-gray-700 leading-relaxed">${block.data.text}</p>`;
-                    break;
-                case 'list':
-                    const listTag = block.data.style === 'ordered' ? 'ol' : 'ul';
-                    html += `<${listTag} class="list-disc list-inside my-4 space-y-2">`;
-                    block.data.items.forEach(item => {
-                        html += `<li>${item}</li>`;
-                    });
-                    html += `</${listTag}>`;
-                    break;
-                default:
-                    console.warn('Tipo de bloco não suportado:', block.type);
-            }
-        });
-        return html;
+    let storiesData = [];
+    let currentStoryIndex = 0;
+    let currentPageIndex = 0;
+    let pageTimeout;
+
+    // --- Funções do Player de Story ---
+    function openStoryViewer(storyIdx) {
+        currentStoryIndex = storyIdx;
+        currentPageIndex = 0;
+        buildProgressBars();
+        displayCurrentPage();
+        viewer.classList.remove('hidden');
     }
 
-    /**
-     * Busca as matérias no Supabase e as renderiza na página.
-     */
+    function closeStoryViewer() {
+        viewer.classList.add('hidden');
+        clearTimeout(pageTimeout);
+        storyMediaContainer.innerHTML = '';
+    }
+
+    function buildProgressBars() {
+        progressBarsContainer.innerHTML = '';
+        const story = storiesData[currentStoryIndex];
+        story.pages.forEach(() => {
+            const barContainer = document.createElement('div');
+            barContainer.className = 'progress-bar-container';
+            const barFill = document.createElement('div');
+            barFill.className = 'progress-bar-fill';
+            barContainer.appendChild(barFill);
+            progressBarsContainer.appendChild(barContainer);
+        });
+    }
+
+    function displayCurrentPage() {
+        clearTimeout(pageTimeout);
+        const story = storiesData[currentStoryIndex];
+        const page = story.pages[currentPageIndex];
+
+        // Atualiza barras de progresso
+        const bars = progressBarsContainer.querySelectorAll('.progress-bar-fill');
+        bars.forEach((bar, index) => {
+            bar.classList.remove('active');
+            if (index < currentPageIndex) bar.style.width = '100%';
+            else bar.style.width = '0%';
+        });
+        bars[currentPageIndex].style.width = '100%';
+        bars[currentPageIndex].classList.add('active');
+
+        // Mostra mídia e texto
+        storyText.innerHTML = page.text || '';
+        if (page.mediaType === 'video') {
+            storyMediaContainer.innerHTML = `<video src="${page.mediaUrl}" class="w-full h-full object-cover" autoplay playsinline></video>`;
+            const video = storyMediaContainer.querySelector('video');
+            video.onended = () => nextPage();
+        } else {
+            storyMediaContainer.innerHTML = `<img src="${page.mediaUrl}" class="w-full h-full object-cover" alt="Story image">`;
+            pageTimeout = setTimeout(() => nextPage(), 5000); // Avança após 5 segundos
+        }
+    }
+
+    function nextPage() {
+        const story = storiesData[currentStoryIndex];
+        if (currentPageIndex < story.pages.length - 1) {
+            currentPageIndex++;
+            displayCurrentPage();
+        } else {
+            closeStoryViewer();
+        }
+    }
+
+    function prevPage() {
+        if (currentPageIndex > 0) {
+            currentPageIndex--;
+            displayCurrentPage();
+        }
+    }
+
+    // --- Lógica Principal ---
     async function fetchAndRenderStories() {
-        // Busca na tabela 'stories', ordenando pelas mais recentes
-        const { data: stories, error } = await supabase
-            .from('stories')
+        // CORREÇÃO: Alterado de 'stories' para 'posts'
+        const { data, error } = await supabaseClient
+            .from('posts')
             .select('*')
+            .eq('status', 'published') // Apenas posts publicados
             .order('timestamp', { ascending: false });
 
         if (error) {
-            console.error('Erro ao buscar matérias:', error);
-            grid.innerHTML = `<p class="text-red-500 col-span-full">Não foi possível carregar as notícias. Tente novamente mais tarde.</p>`;
+            console.error('Erro ao buscar posts:', error);
+            grid.innerHTML = `<p class="text-red-500 col-span-full">Não foi possível carregar as notícias.</p>`;
+            return;
+        }
+        
+        storiesData = data;
+        grid.innerHTML = ''; // Limpa os placeholders
+
+        if (storiesData.length === 0) {
+            grid.innerHTML = `<p class="text-gray-500 col-span-full">Nenhuma notícia publicada no momento.</p>`;
             return;
         }
 
-        if (stories.length === 0) {
-            grid.innerHTML = `<p class="text-gray-500 col-span-full">Nenhuma notícia encontrada.</p>`;
-            return;
-        }
-
-        // Limpa o grid antes de adicionar os novos cards
-        grid.innerHTML = '';
-
-        stories.forEach(story => {
+        storiesData.forEach((story, index) => {
             const card = document.createElement('div');
-            card.className = 'bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105';
-            
+            card.className = 'bg-white rounded-lg shadow-md overflow-hidden cursor-pointer news-card';
             card.innerHTML = `
                 <img src="${story.card_image}" alt="${story.card_title}" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/31343C?text=Imagem';">
                 <div class="p-4">
@@ -115,36 +173,18 @@
                     <h3 class="text-lg font-semibold mt-1 text-slate-800">${story.card_title}</h3>
                 </div>
             `;
-
-            // Adiciona o evento de clique para abrir a matéria
-            card.addEventListener('click', () => {
-                // O conteúdo da matéria está salvo como um JSON string, então precisamos fazer o parse
-                const contentData = JSON.parse(story.content);
-                storyContent.innerHTML = renderEditorJsData(contentData);
-                viewer.classList.remove('hidden');
-            });
-
+            card.addEventListener('click', () => openStoryViewer(index));
             grid.appendChild(card);
         });
     }
 
-    // Funções para controlar o modal
-    function closeViewer() {
-        viewer.classList.add('hidden');
-        storyContent.innerHTML = '';
-    }
+    // --- Event Listeners ---
+    closeBtn.addEventListener('click', closeStoryViewer);
+    nextBtn.addEventListener('click', nextPage);
+    prevBtn.addEventListener('click', prevPage);
 
-    closeBtn.addEventListener('click', closeViewer);
-    
-    // Fecha o modal se clicar fora do conteúdo
-    viewer.addEventListener('click', (e) => {
-        if (e.target === viewer) {
-            closeViewer();
-        }
-    });
-
-    // Inicia o carregamento das matérias quando a página carregar
-    document.addEventListener('DOMContentLoaded', fetchAndRenderStories);
+    // --- Carga Inicial ---
+    fetchAndRenderStories();
   </script>
 </body>
 </html>
