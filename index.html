@@ -63,7 +63,7 @@
     const prevBtn = document.getElementById('story-prev');
     const nextBtn = document.getElementById('story-next');
 
-    let storiesData = [];
+    let postsData = [];
     let currentStoryIndex = 0;
     let currentPageIndex = 0;
     let pageTimeout;
@@ -85,7 +85,7 @@
 
     function buildProgressBars() {
         progressBarsContainer.innerHTML = '';
-        const story = storiesData[currentStoryIndex];
+        const story = postsData[currentStoryIndex];
         story.pages.forEach(() => {
             const barContainer = document.createElement('div');
             barContainer.className = 'progress-bar-container';
@@ -98,10 +98,9 @@
 
     function displayCurrentPage() {
         clearTimeout(pageTimeout);
-        const story = storiesData[currentStoryIndex];
+        const story = postsData[currentStoryIndex];
         const page = story.pages[currentPageIndex];
 
-        // Atualiza barras de progresso
         const bars = progressBarsContainer.querySelectorAll('.progress-bar-fill');
         bars.forEach((bar, index) => {
             bar.classList.remove('active');
@@ -111,7 +110,6 @@
         bars[currentPageIndex].style.width = '100%';
         bars[currentPageIndex].classList.add('active');
 
-        // Mostra mídia e texto
         storyText.innerHTML = page.text || '';
         if (page.mediaType === 'video') {
             storyMediaContainer.innerHTML = `<video src="${page.mediaUrl}" class="w-full h-full object-cover" autoplay playsinline></video>`;
@@ -119,12 +117,12 @@
             video.onended = () => nextPage();
         } else {
             storyMediaContainer.innerHTML = `<img src="${page.mediaUrl}" class="w-full h-full object-cover" alt="Story image">`;
-            pageTimeout = setTimeout(() => nextPage(), 5000); // Avança após 5 segundos
+            pageTimeout = setTimeout(() => nextPage(), 5000);
         }
     }
 
     function nextPage() {
-        const story = storiesData[currentStoryIndex];
+        const story = postsData[currentStoryIndex];
         if (currentPageIndex < story.pages.length - 1) {
             currentPageIndex++;
             displayCurrentPage();
@@ -141,12 +139,11 @@
     }
 
     // --- Lógica Principal ---
-    async function fetchAndRenderStories() {
-        // CORREÇÃO: Alterado de 'stories' para 'posts'
+    async function fetchAndRenderPosts() {
         const { data, error } = await supabaseClient
             .from('posts')
             .select('*')
-            .eq('status', 'published') // Apenas posts publicados
+            .eq('status', 'published')
             .order('timestamp', { ascending: false });
 
         if (error) {
@@ -155,22 +152,23 @@
             return;
         }
         
-        storiesData = data;
-        grid.innerHTML = ''; // Limpa os placeholders
+        postsData = data;
+        grid.innerHTML = '';
 
-        if (storiesData.length === 0) {
+        if (postsData.length === 0) {
             grid.innerHTML = `<p class="text-gray-500 col-span-full">Nenhuma notícia publicada no momento.</p>`;
             return;
         }
 
-        storiesData.forEach((story, index) => {
+        postsData.forEach((post, index) => {
             const card = document.createElement('div');
             card.className = 'bg-white rounded-lg shadow-md overflow-hidden cursor-pointer news-card';
+            // CORREÇÃO: Usando os nomes de coluna corretos (cardimage, cardtitle, categorycolor)
             card.innerHTML = `
-                <img src="${story.card_image}" alt="${story.card_title}" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/31343C?text=Imagem';">
+                <img src="${post.cardimage}" alt="${post.cardtitle}" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/31343C?text=Imagem';">
                 <div class="p-4">
-                    <span class="text-xs font-semibold uppercase" style="color:${story.category_color};">${story.category}</span>
-                    <h3 class="text-lg font-semibold mt-1 text-slate-800">${story.card_title}</h3>
+                    <span class="text-xs font-semibold uppercase" style="color:${post.categorycolor};">${post.category}</span>
+                    <h3 class="text-lg font-semibold mt-1 text-slate-800">${post.cardtitle}</h3>
                 </div>
             `;
             card.addEventListener('click', () => openStoryViewer(index));
@@ -184,7 +182,7 @@
     prevBtn.addEventListener('click', prevPage);
 
     // --- Carga Inicial ---
-    fetchAndRenderStories();
+    fetchAndRenderPosts();
   </script>
 </body>
 </html>
