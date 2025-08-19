@@ -22,8 +22,18 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- CSS Externo -->
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.375rem; }
+        #story-preview-viewer { aspect-ratio: 9 / 16; width: 100%; max-width: 375px; max-height: 100%; border-radius: 2.5rem; border: 10px solid black; background-color: #000; }
+        #story-preview-media, #story-preview-video { object-fit: cover; }
+        #story-preview-container::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%); z-index: 1; }
+        .story-preview-indicator { width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.4); border-radius: 50%; transition: all 0.4s ease; }
+        .story-preview-indicator.active { background-color: white; transform: scale(1.2); }
+        .text-shadow { text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
+        .tox-tinymce-aux { display: none !important; }
+    </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
@@ -73,26 +83,26 @@
                     <input type="hidden" id="post-id">
                     
                     <div class="p-4 bg-gray-50 rounded-lg border">
-                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Dados Principais (Card)</h3>
+                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Dados Principais</h3>
                         <div class="space-y-4">
                             <div>
                                 <label for="category" class="font-semibold text-sm text-gray-700 block mb-1">Categoria</label>
-                                <input type="text" id="category" class="w-full p-3 border rounded-lg" required>
+                                <input type="text" id="category" placeholder="Ex: TECNOLOGIA" class="w-full p-3 border rounded-lg" required>
                             </div>
-                             <div>
+                            <div>
                                 <label for="categorycolor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label>
                                 <div class="flex items-center gap-2">
                                     <input type="color" id="categoryColorValue" class="h-12 w-14 p-1 border rounded-lg cursor-pointer" value="#2563eb">
-                                    <input type="text" id="categorycolor" class="w-full p-3 border rounded-lg" required>
+                                    <input type="text" id="categorycolor" placeholder="Ex: #2563eb" class="w-full p-3 border rounded-lg" required>
                                 </div>
                             </div>
                             <div>
                                 <label for="cardtitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label>
-                                <input type="text" id="cardtitle" class="w-full p-3 border rounded-lg" required>
+                                <input type="text" id="cardtitle" placeholder="Título que aparece na página inicial" class="w-full p-3 border rounded-lg" required>
                             </div>
                             <div>
                                 <label for="cardimage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem do Card</label>
-                                <input type="url" id="cardimage" class="w-full p-3 border rounded-lg" required>
+                                <input type="url" id="cardimage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
                             </div>
                         </div>
                     </div>
@@ -100,13 +110,13 @@
                     <div class="p-4 bg-gray-50 rounded-lg border">
                         <h3 class="font-bold text-lg mb-4 border-b pb-2">Matéria Completa</h3>
                         <div class="space-y-4">
-                           <div>
-                                <label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label>
-                                <input type="text" id="fullContentTitle" class="w-full p-3 border rounded-lg" required>
-                            </div>
                             <div>
                                 <label for="fullContentImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem da Matéria</label>
-                                <input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" required>
+                                <input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
+                            </div>
+                             <div>
+                                <label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label>
+                                <input type="text" id="fullContentTitle" placeholder="Título que aparece na matéria completa" class="w-full p-3 border rounded-lg" required>
                             </div>
                             <div>
                                 <label for="fullContentBody" class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label>
@@ -129,10 +139,11 @@
                                 <select id="status" class="w-full p-3 border rounded-lg">
                                     <option value="published">Publicado</option>
                                     <option value="draft">Rascunho</option>
+                                    <option value="scheduled">Agendado</option>
                                 </select>
                             </div>
-                             <div>
-                                <label for="timestamp" class="font-semibold text-sm text-gray-700 block mb-1">Data de Publicação</label>
+                            <div id="schedule-container" class="hidden">
+                                <label for="timestamp" class="font-semibold text-sm text-gray-700 block mb-1">Data de Publicação/Agendamento</label>
                                 <input type="datetime-local" id="timestamp" class="w-full p-3 border rounded-lg">
                             </div>
                         </div>
@@ -142,12 +153,12 @@
                 <!-- Coluna do Preview -->
                 <aside class="lg:col-span-1 flex items-center justify-center bg-gray-200 rounded-lg p-4 h-full overflow-hidden">
                     <div id="story-preview-viewer" class="relative w-full bg-gray-900 overflow-hidden shadow-2xl">
-                         <div id="story-preview-container" class="absolute inset-0">
+                        <div id="story-preview-container" class="absolute inset-0">
                             <img id="story-preview-media" src="https://placehold.co/375x812/111827/4b5563?text=Preview" class="w-full h-full object-cover" alt="Imagem do story">
                             <video id="story-preview-video" class="w-full h-full object-cover hidden" playsinline autoplay muted loop src=""></video>
                         </div>
                         <header class="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20">
-                            <img src="https://placehold.co/40x40/FFFFFF/1F2937?text=CM" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo ComMarília">
+                            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo ComMarília">
                             <div>
                                 <div class="font-bold text-white text-sm">ComMarília</div>
                                 <div class="text-white/80 text-xs">agora mesmo</div>
@@ -170,14 +181,13 @@
             </main>
             <footer class="flex justify-end items-center p-6 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
                 <button type="button" id="cancel-btn" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 mr-4">Cancelar</button>
-                <button type="button" id="save-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Salvar</button>
+                <button type="button" id="save-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Salvar Alterações</button>
             </footer>
         </div>
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Configuração do Supabase ---
         const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
         const { createClient } = supabase;
@@ -192,9 +202,7 @@
             toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media | code',
             height: 300,
             menubar: false,
-            setup: (editor) => {
-                editor.on('change', updatePreview);
-            }
+            setup: (editor) => editor.on('change', updatePreview)
         });
 
         const addPostBtn = document.getElementById('add-post-btn');
@@ -207,6 +215,8 @@
         const pagesContainer = document.getElementById('pages-container');
         const colorPicker = document.getElementById('categoryColorValue');
         const colorText = document.getElementById('categorycolor');
+        const statusSelect = document.getElementById('status');
+        const scheduleContainer = document.getElementById('schedule-container');
         const cancelBtn = document.getElementById('cancel-btn');
         const saveBtn = document.getElementById('save-btn');
 
@@ -216,9 +226,8 @@
             loadStory(post) { this.currentPost = post; this.currentPageIndex = 0; this.updatePage(); this.buildIndicators(); }
             updatePage() {
                 if (!this.currentPost?.pages?.[this.currentPageIndex]) {
-                    this.dom.media.src = 'https://placehold.co/375x812/111827/4b5563?text=Preview';
-                    this.dom.media.style.display = 'block'; this.dom.video.style.display = 'none';
-                    this.dom.text.innerHTML = ''; this.dom.swipeUp.style.display = 'none'; return;
+                    this.dom.media.src = 'https://placehold.co/375x812/111827/4b5563?text=Preview'; this.dom.media.style.display = 'block';
+                    this.dom.video.style.display = 'none'; this.dom.text.innerHTML = ''; this.dom.swipeUp.style.display = 'none'; return;
                 }
                 const page = this.currentPost.pages[this.currentPageIndex];
                 this.dom.media.style.display = 'none'; this.dom.video.style.display = 'none';
@@ -234,8 +243,7 @@
                 this.dom.indicators.innerHTML = '';
                 if (!this.currentPost?.pages) return;
                 this.currentPost.pages.forEach(() => {
-                    const indicator = document.createElement('div');
-                    indicator.className = 'story-preview-indicator';
+                    const indicator = document.createElement('div'); indicator.className = 'story-preview-indicator';
                     this.dom.indicators.appendChild(indicator);
                 });
                 this.updateIndicators();
@@ -259,15 +267,13 @@
             previewPlayer.loadStory({ pages });
         }
         postForm.addEventListener('input', updatePreview);
-        postForm.addEventListener('change', updatePreview);
 
         async function loadPosts() {
             tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts...</td></tr>`;
             const { data, error } = await supabaseClient.from('posts').select('*').order('timestamp', { ascending: false });
             if (error) {
                 console.error('Erro ao buscar posts:', error);
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Erro ao carregar. Verifique o nome da tabela e as permissões.</td></tr>`;
-                return;
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Erro ao carregar os posts.</td></tr>`; return;
             }
             postsData = data;
             renderTable();
@@ -283,8 +289,8 @@
                 tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado.</td></tr>`; return;
             }
             tableBody.innerHTML = postsData.map(post => {
-                const statusClasses = { published: 'bg-green-100 text-green-800', draft: 'bg-yellow-100 text-yellow-800' };
-                const statusText = { published: 'Publicado', draft: 'Rascunho' };
+                const statusClasses = { published: 'bg-green-100 text-green-800', draft: 'bg-yellow-100 text-yellow-800', scheduled: 'bg-blue-100 text-blue-800' };
+                const statusText = { published: 'Publicado', draft: 'Rascunho', scheduled: 'Agendado' };
                 return `
                 <tr class="border-b">
                     <td class="py-3 px-4"><div class="font-semibold">${post.cardtitle}</div><div class="text-xs text-gray-500">${post.category}</div></td>
@@ -320,9 +326,8 @@
             pagesContainer.innerHTML = '';
             tinymce.get('fullContentBody').setContent('');
             addPageField();
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('timestamp').value = now.toISOString().slice(0, 16);
+            statusSelect.value = 'published';
+            toggleSchedule();
             modal.classList.remove('hidden');
             updatePreview();
         }
@@ -343,10 +348,13 @@
             tinymce.get('fullContentBody').setContent(post.fullcontent?.body || '');
             pagesContainer.innerHTML = '';
             post.pages?.forEach(page => addPageField(page.mediaUrl, page.text, page.showLink));
-            document.getElementById('status').value = post.status;
-            const date = new Date(post.timestamp);
-            date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-            document.getElementById('timestamp').value = date.toISOString().slice(0, 16);
+            statusSelect.value = post.status;
+            toggleSchedule();
+            if (post.timestamp) {
+                const date = new Date(post.timestamp);
+                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                document.getElementById('timestamp').value = date.toISOString().slice(0, 16);
+            }
             modal.classList.remove('hidden');
             updatePreview();
         }
@@ -357,6 +365,18 @@
         cancelBtn.addEventListener('click', closeModal);
         colorPicker.addEventListener('input', (e) => colorText.value = e.target.value);
         colorText.addEventListener('input', (e) => colorPicker.value = e.target.value);
+        statusSelect.addEventListener('change', toggleSchedule);
+
+        function toggleSchedule() {
+            const isScheduled = statusSelect.value === 'scheduled';
+            scheduleContainer.style.display = 'block'; // Always show for simplicity
+            document.querySelector('label[for="timestamp"]').textContent = isScheduled ? 'Data de Agendamento' : 'Data de Publicação';
+            if (!isScheduled) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('timestamp').value = now.toISOString().slice(0, 16);
+            }
+        }
 
         addPageBtn.addEventListener('click', () => addPageField());
         function addPageField(mediaUrl = '', text = '', showLink = true) {
