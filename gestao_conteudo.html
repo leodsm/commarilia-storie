@@ -8,85 +8,36 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-        .drop-zone {
-            border: 2px dashed #ccc;
-            border-radius: 0.5rem;
-        }
-        .drop-zone.dragover {
-            background-color: #e9e9e9;
-        }
-        .drop-zone input[type="file"] {
-            display: none;
-        }
-        /* Simple HTML Editor Styles */
-        .simple-editor {
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            min-height: 150px;
-        }
-        .editor-toolbar {
-            border-bottom: 1px solid #d1d5db;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .editor-toolbar button {
-            margin-right: 0.5rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            background-color: #f3f4f6;
-            border: 1px solid #d1d5db;
-        }
-         /* Preview Modal Styles */
-        #preview-modal-content {
-            width: 375px;
-            height: 812px;
-            max-width: 90vw;
-            max-height: 90vh;
-        }
-        .text-shadow { text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
-    </style>
+    <!-- TinyMCE (Editor WYSIWYG) -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- CSS Externo -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100 text-gray-800">
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <header class="mb-8">
             <h1 class="text-4xl font-bold text-gray-900">Gerenciador de Conteúdo</h1>
-            <p class="text-gray-600 mt-1">Adicione, edite e exporte as postagens do seu site.</p>
+            <p class="text-gray-600 mt-1">Adicione e edite as postagens do seu site diretamente no banco de dados.</p>
         </header>
-
-        <!-- Seção de Upload e Download -->
-        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-xl font-bold mb-4">1. Carregar e Exportar Dados</h2>
-            <div class="grid md:grid-cols-2 gap-6 items-center">
-                <div id="drop-zone" class="drop-zone p-8 text-center cursor-pointer transition-colors">
-                    <input type="file" id="json-upload" accept=".json">
-                    <p class="text-gray-500">Arraste e solte o arquivo <code class="bg-gray-200 px-1 rounded">posts.json</code> aqui, ou clique para selecionar.</p>
-                    <p id="file-name" class="text-green-600 font-semibold mt-2"></p>
-                </div>
-                <button id="export-json-btn" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                    Exportar posts.json
-                </button>
-            </div>
-        </div>
 
         <!-- Seção da Tabela de Posts -->
         <div class="bg-white p-6 rounded-xl shadow-md">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">2. Posts Atuais</h2>
-                <button id="add-post-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                <h2 class="text-xl font-bold">Posts Atuais</h2>
+                <button id="add-post-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
                     Adicionar Novo Post
                 </button>
             </div>
@@ -94,17 +45,15 @@
                 <table class="min-w-full bg-white">
                     <thead class="bg-gray-200">
                         <tr>
-                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Categoria</th>
                             <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Título Principal</th>
+                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
                             <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Páginas</th>
                             <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Publicação</th>
                             <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="posts-table-body" class="text-gray-700">
-                        <tr>
-                            <td colspan="5" class="text-center py-10 text-gray-500">Carregue um arquivo <code>posts.json</code> para começar.</td>
-                        </tr>
+                        <tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts do Supabase...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -112,401 +61,399 @@
     </div>
 
     <!-- Modal para Adicionar/Editar Post -->
-    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
-            <form id="post-form" class="p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="modal-title" class="text-2xl font-bold">Adicionar Novo Post</h2>
-                    <button type="button" id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
-                </div>
-                
-                <input type="hidden" id="post-index">
-
-                <div class="grid md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label for="category" class="font-semibold mb-1 block">Categoria</label>
-                        <input type="text" id="category" list="category-list" placeholder="Selecione ou crie uma categoria" class="w-full p-3 border rounded-lg uppercase" required>
-                        <datalist id="category-list"></datalist>
-                    </div>
-                    <div class="flex items-center gap-2">
-                         <div class="flex-shrink-0">
-                             <label class="font-semibold mb-1 block">Cor</label>
-                            <input type="color" id="categoryColorValue" class="h-12 w-14 p-1 border rounded-lg cursor-pointer" value="#2563eb">
-                        </div>
-                        <div class="flex-grow">
-                             <label class="font-semibold mb-1 block">Hex</label>
-                            <input type="text" id="categoryColor" placeholder="#2563eb" class="w-full p-3 border rounded-lg" required>
-                        </div>
-                    </div>
-                    <input type="text" id="cardTitle" placeholder="Título do Card" class="w-full p-3 border rounded-lg md:col-span-2" required>
-                    <input type="url" id="cardImage" placeholder="URL da Imagem do Card" class="w-full p-3 border rounded-lg md:col-span-2" required>
-                </div>
-
-                <div class="mb-6">
-                    <h3 class="font-bold text-lg mb-3">Páginas do Story</h3>
-                    <div id="pages-container" class="space-y-6"></div>
-                    <button type="button" id="add-page-btn" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Adicionar Página</button>
-                </div>
-
-                <div>
-                    <h3 class="font-bold text-lg mb-3">Matéria Completa</h3>
-                    <div class="space-y-4">
-                        <input type="url" id="fullContentImage" placeholder="URL da Imagem da Matéria" class="w-full p-3 border rounded-lg" required>
-                        <input type="text" id="fullContentTitle" placeholder="Título da Matéria" class="w-full p-3 border rounded-lg" required>
-                        <div>
-                            <label class="font-semibold mb-2 block">Corpo da Matéria</label>
-                             <div class="editor-toolbar">
-                                <button type="button" class="format-btn" data-format="bold"><i data-feather="bold"></i></button>
-                                <button type="button" class="format-btn" data-format="italic"><i data-feather="italic"></i></button>
-                                <button type="button" class="format-btn" data-format="insertUnorderedList"><i data-feather="list"></i></button>
+    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col">
+            <header class="flex justify-between items-center p-6 border-b flex-shrink-0">
+                <h2 id="modal-title" class="text-2xl font-bold">Adicionar Novo Post</h2>
+                <button type="button" id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </header>
+            <main class="flex-grow overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+                <!-- Coluna do Formulário -->
+                <form id="post-form" class="lg:col-span-2 overflow-y-auto pr-4 space-y-6">
+                    <input type="hidden" id="post-id">
+                    
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Dados Principais (Card)</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="category" class="font-semibold text-sm text-gray-700 block mb-1">Categoria</label>
+                                <input type="text" id="category" placeholder="Ex: TECNOLOGIA" class="w-full p-3 border rounded-lg" required>
                             </div>
-                            <div id="fullContentBodyEditor" class="simple-editor" contenteditable="true"></div>
+                             <div>
+                                <label for="categoryColor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="categoryColorValue" class="h-12 w-14 p-1 border rounded-lg cursor-pointer" value="#2563eb">
+                                    <input type="text" id="categoryColor" placeholder="Ex: #2563eb" class="w-full p-3 border rounded-lg" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="cardTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label>
+                                <input type="text" id="cardTitle" placeholder="Título que aparece na página inicial" class="w-full p-3 border rounded-lg" required>
+                            </div>
+                            <div>
+                                <label for="cardImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem do Card</label>
+                                <input type="url" id="cardImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Matéria Completa</h3>
+                        <div class="space-y-4">
+                           <div>
+                                <label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label>
+                                <input type="text" id="fullContentTitle" placeholder="Título que aparece na matéria completa" class="w-full p-3 border rounded-lg" required>
+                            </div>
+                            <div>
+                                <label for="fullContentBody" class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label>
+                                <textarea id="fullContentBody" placeholder="Use o editor para formatar o texto..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Páginas do Story</h3>
+                         <div id="pages-container" class="space-y-4"></div>
+                         <button type="button" id="add-page-btn" class="w-full mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Adicionar Página</button>
+                    </div>
 
-                <div class="flex justify-end gap-4 mt-8">
-                    <button type="button" id="cancel-btn" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 transition-colors">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">Salvar</button>
-                </div>
-            </form>
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Publicação</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="status" class="font-semibold text-sm text-gray-700 block mb-1">Status</label>
+                                <select id="status" class="w-full p-3 border rounded-lg">
+                                    <option value="published">Publicado</option>
+                                    <option value="draft">Rascunho</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="timestamp" class="font-semibold text-sm text-gray-700 block mb-1">Data de Publicação</label>
+                                <input type="datetime-local" id="timestamp" class="w-full p-3 border rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Coluna do Preview -->
+                <aside class="lg:col-span-1 flex items-center justify-center bg-gray-200 rounded-lg p-4 h-full overflow-hidden">
+                    <div id="story-preview-viewer" class="relative w-full bg-gray-900 overflow-hidden shadow-2xl">
+                         <div id="story-preview-container" class="absolute inset-0">
+                            <img id="story-preview-media" src="https://placehold.co/375x812/111827/4b5563?text=Preview" class="w-full h-full object-cover" alt="Imagem do story">
+                            <video id="story-preview-video" class="w-full h-full object-cover hidden" playsinline autoplay muted loop src=""></video>
+                        </div>
+                        <header class="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20">
+                            <img src="https://placehold.co/40x40/FFFFFF/1F2937?text=CM" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo ComMarília">
+                            <div>
+                                <div class="font-bold text-white text-sm">ComMarília</div>
+                                <div class="text-white/80 text-xs">agora mesmo</div>
+                            </div>
+                        </header>
+                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
+                            <div id="story-preview-text" class="text-2xl font-bold leading-tight text-shadow"></div>
+                        </div>
+                        <div id="preview-prev-area" class="absolute left-0 top-0 h-full w-1/4 cursor-pointer z-30"></div>
+                        <div id="preview-next-area" class="absolute right-0 top-0 h-full w-3/4 cursor-pointer z-30"></div>
+                        <div id="story-preview-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer hidden">
+                            <div class="inline-flex flex-col items-center gap-1 text-white animate-bounce">
+                                <i data-feather="chevron-up" class="w-6 h-6"></i>
+                                <span class="font-semibold text-sm">Matéria Completa</span>
+                            </div>
+                        </div>
+                        <div id="story-preview-indicators" class="absolute bottom-4 left-0 w-full flex justify-center items-center gap-2 z-20"></div>
+                    </div>
+                </aside>
+            </main>
+            <footer class="flex justify-end items-center p-6 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
+                <button type="button" id="cancel-btn" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 mr-4">Cancelar</button>
+                <button type="button" id="save-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Salvar</button>
+            </footer>
         </div>
     </div>
-    
-    <!-- Modal de Pré-visualização -->
-    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[60] flex items-center justify-center p-4 hidden">
-        <div id="preview-modal-content" class="relative bg-gray-900 rounded-xl overflow-hidden shadow-2xl flex flex-col">
-            <div id="preview-media-container" class="w-full h-full absolute inset-0"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-            
-            <div class="absolute bottom-16 left-0 p-6 text-white z-10 w-full">
-                <div id="preview-title" class="text-2xl font-bold leading-tight text-shadow"></div>
-            </div>
-            <button type="button" id="close-preview-btn" class="absolute top-4 right-4 text-white z-30 bg-black/30 rounded-full p-2">
-                <i data-feather="x" class="w-6 h-6"></i>
-            </button>
-        </div>
-    </div>
-
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        let postsData = [];
+        // --- Configuração do Supabase ---
+        const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- Elementos da DOM ---
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('json-upload');
-        const fileNameDisplay = document.getElementById('file-name');
-        const exportBtn = document.getElementById('export-json-btn');
+        let postsData = [];
+        let previewPlayer;
+        
+        // --- Inicialização do Editor WYSIWYG ---
+        tinymce.init({
+            selector: 'textarea#fullContentBody',
+            plugins: 'code lists link image table media autoresize',
+            toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media | code',
+            height: 300,
+            menubar: false,
+            setup: (editor) => {
+                editor.on('change', updatePreview);
+            }
+        });
+
+        // --- DOM Elements ---
         const addPostBtn = document.getElementById('add-post-btn');
         const tableBody = document.getElementById('posts-table-body');
-        
         const modal = document.getElementById('post-modal');
         const modalTitle = document.getElementById('modal-title');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        const cancelBtn = document.getElementById('cancel-btn');
         const postForm = document.getElementById('post-form');
         const addPageBtn = document.getElementById('add-page-btn');
         const pagesContainer = document.getElementById('pages-container');
         const colorPicker = document.getElementById('categoryColorValue');
         const colorText = document.getElementById('categoryColor');
-        const categoryInput = document.getElementById('category');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const saveBtn = document.getElementById('save-btn');
 
-        const previewModal = document.getElementById('preview-modal');
-        const closePreviewBtn = document.getElementById('close-preview-btn');
-
-        // --- Lógica de Upload ---
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        // --- Live Preview Player (mesma lógica de antes) ---
+        class PreviewPlayer {
+            constructor(domElements) { this.dom = domElements; this.currentPost = null; this.currentPageIndex = 0; this.init(); }
+            init() { this.dom.prevArea.addEventListener('click', () => this.prevPage()); this.dom.nextArea.addEventListener('click', () => this.nextPage()); }
+            loadStory(post) { this.currentPost = post; this.currentPageIndex = 0; this.updatePage(); this.buildIndicators(); }
+            updatePage() {
+                if (!this.currentPost?.pages?.[this.currentPageIndex]) {
+                    this.dom.media.src = 'https://placehold.co/375x812/111827/4b5563?text=Preview';
+                    this.dom.media.style.display = 'block';
+                    this.dom.video.style.display = 'none';
+                    this.dom.text.innerHTML = '';
+                    this.dom.swipeUp.style.display = 'none';
+                    return;
+                }
+                const page = this.currentPost.pages[this.currentPageIndex];
+                this.dom.media.style.display = 'none'; this.dom.video.style.display = 'none';
+                if (page.mediaType === 'video') { this.dom.video.src = page.mediaUrl; this.dom.video.style.display = 'block'; this.dom.video.play().catch(e => {}); } 
+                else { this.dom.media.src = page.mediaUrl || 'https://placehold.co/375x812/111827/4b5563?text=Preview'; this.dom.media.style.display = 'block'; }
+                this.dom.text.innerHTML = page.text || '';
+                this.dom.swipeUp.style.display = page.showLink ? 'block' : 'none';
+                this.updateIndicators();
+            }
+            nextPage() { if (this.currentPost?.pages && this.currentPageIndex < this.currentPost.pages.length - 1) { this.currentPageIndex++; this.updatePage(); } }
+            prevPage() { if (this.currentPageIndex > 0) { this.currentPageIndex--; this.updatePage(); } }
+            buildIndicators() {
+                this.dom.indicators.innerHTML = '';
+                if (!this.currentPost?.pages) return;
+                this.currentPost.pages.forEach(() => {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'story-preview-indicator';
+                    this.dom.indicators.appendChild(indicator);
+                });
+                this.updateIndicators();
+            }
+            updateIndicators() {
+                const indicators = this.dom.indicators.querySelectorAll('.story-preview-indicator');
+                indicators.forEach((indicator, index) => indicator.classList.toggle('active', index === this.currentPageIndex));
+            }
+        }
+        previewPlayer = new PreviewPlayer({
+            media: document.getElementById('story-preview-media'), video: document.getElementById('story-preview-video'), text: document.getElementById('story-preview-text'),
+            swipeUp: document.getElementById('story-preview-swipe-up'), indicators: document.getElementById('story-preview-indicators'),
+            prevArea: document.getElementById('preview-prev-area'), nextArea: document.getElementById('preview-next-area'),
         });
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleFile(e.target.files[0]);
-        });
+        
+        function updatePreview() {
+            const pages = Array.from(pagesContainer.querySelectorAll('.page-item')).map(el => {
+                const mediaUrl = el.querySelector('.page-media-url').value;
+                return { mediaUrl, mediaType: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', text: el.querySelector('.page-text').value, showLink: el.querySelector('.page-show-link').checked, };
+            });
+            previewPlayer.loadStory({ pages });
+        }
+        postForm.addEventListener('input', updatePreview);
+        postForm.addEventListener('change', updatePreview);
 
-        function handleFile(file) {
-            if (file.type !== 'application/json') {
-                alert('Por favor, selecione um arquivo .json válido.');
+        // --- Lógica de Carregamento e Tabela ---
+        async function loadPosts() {
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts...</td></tr>`;
+            const { data, error } = await supabase.from('stories').select('*').order('timestamp', { ascending: false });
+
+            if (error) {
+                console.error('Erro ao buscar posts:', error);
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Erro ao carregar os posts.</td></tr>`;
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    postsData = JSON.parse(e.target.result);
-                    fileNameDisplay.textContent = `Arquivo carregado: ${file.name}`;
-                    enableButtons();
-                    renderTable();
-                    updateCategoryList();
-                } catch (error) {
-                    alert('Erro ao processar o arquivo JSON. Verifique o formato.');
-                    console.error(error);
-                }
-            };
-            reader.readAsText(file);
+            postsData = data;
+            renderTable();
         }
 
-        function enableButtons() {
-            exportBtn.disabled = false;
-            addPostBtn.disabled = false;
-        }
-
-        // --- Lógica da Tabela ---
-        function formatTimeAgo(isoString) {
-            if (!isoString) return 'Data desconhecida';
+        function formatDateTime(isoString) {
+            if (!isoString) return 'N/A';
             const date = new Date(isoString);
-            const now = new Date();
-            const seconds = Math.round((now - date) / 1000);
-            const minutes = Math.round(seconds / 60);
-            const hours = Math.round(minutes / 60);
-            const days = Math.round(hours / 24);
-
-            if (seconds < 60) return `agora mesmo`;
-            if (minutes < 60) return `${minutes} min atrás`;
-            if (hours < 24) return `${hours}h atrás`;
-            return `${days}d atrás`;
+            return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
         function renderTable() {
             if (postsData.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado. Adicione um novo post para começar.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado. Clique em "Adicionar Novo Post".</td></tr>`;
                 return;
             }
-            
-            tableBody.innerHTML = postsData.map((post, index) => `
+            tableBody.innerHTML = postsData.map(post => {
+                const statusClasses = { published: 'bg-green-100 text-green-800', draft: 'bg-yellow-100 text-yellow-800' };
+                const statusText = { published: 'Publicado', draft: 'Rascunho' };
+                return `
                 <tr class="border-b">
                     <td class="py-3 px-4">
-                        <span class="text-white text-xs font-bold px-2 py-1 rounded-full" style="background-color: ${post.categoryColor};">${post.category}</span>
+                        <div class="font-semibold">${post.card_title}</div>
+                        <div class="text-xs text-gray-500">${post.category}</div>
                     </td>
-                    <td class="py-3 px-4 font-semibold">${post.cardTitle}</td>
-                    <td class="py-3 px-4">${post.pages.length}</td>
-                    <td class="py-3 px-4 text-sm text-gray-600">${formatTimeAgo(post.timestamp)}</td>
+                    <td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td>
+                    <td class="py-3 px-4">${post.pages?.length || 0}</td>
+                    <td class="py-3 px-4 text-sm text-gray-600">${formatDateTime(post.timestamp)}</td>
                     <td class="py-3 px-4">
-                        <button class="edit-btn text-blue-500 hover:text-blue-700 mr-4" data-index="${index}">Editar</button>
-                        <button class="delete-btn text-red-500 hover:text-red-700" data-index="${index}">Excluir</button>
+                        <button class="edit-btn text-blue-500 hover:text-blue-700 mr-4" data-id="${post.id}">Editar</button>
+                        <button class="delete-btn text-red-500 hover:text-red-700" data-id="${post.id}">Excluir</button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
-        tableBody.addEventListener('click', (e) => {
-            const index = e.target.dataset.index;
+        tableBody.addEventListener('click', async (e) => {
+            const postId = e.target.dataset.id;
+            if (!postId) return;
+
             if (e.target.classList.contains('edit-btn')) {
-                openModalForEdit(index);
+                openModalForEdit(postId);
             }
             if (e.target.classList.contains('delete-btn')) {
-                if (confirm(`Tem certeza que deseja excluir o post "${postsData[index].cardTitle}"?`)) {
-                    postsData.splice(index, 1);
-                    renderTable();
+                const post = postsData.find(p => p.id == postId);
+                if (confirm(`Tem certeza que deseja excluir o post "${post.card_title}"?`)) {
+                    const { error } = await supabase.from('stories').delete().eq('id', postId);
+                    if (error) {
+                        alert('Erro ao excluir o post.');
+                        console.error('Delete error:', error);
+                    } else {
+                        loadPosts(); // Recarrega a tabela
+                    }
                 }
             }
         });
 
-        // --- Lógica do Modal e Editor Simples ---
+        // --- Lógica do Modal ---
         function openModalForAdd() {
             postForm.reset();
-            document.getElementById('post-index').value = '';
+            document.getElementById('post-id').value = '';
             modalTitle.textContent = 'Adicionar Novo Post';
             pagesContainer.innerHTML = '';
+            tinymce.get('fullContentBody').setContent('');
             addPageField();
-            document.getElementById('fullContentBodyEditor').innerHTML = '';
+            // Define a data atual como padrão
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('timestamp').value = now.toISOString().slice(0, 16);
             modal.classList.remove('hidden');
+            updatePreview();
         }
 
-        function openModalForEdit(index) {
-            const post = postsData[index];
+        function openModalForEdit(postId) {
+            const post = postsData.find(p => p.id == postId);
+            if (!post) return;
             postForm.reset();
-            document.getElementById('post-index').value = index;
+            document.getElementById('post-id').value = post.id;
             modalTitle.textContent = 'Editar Post';
             
-            categoryInput.value = post.category;
-            colorPicker.value = post.categoryColor;
-            colorText.value = post.categoryColor;
-            document.getElementById('cardTitle').value = post.cardTitle;
-            document.getElementById('cardImage').value = post.cardImage;
+            document.getElementById('category').value = post.category;
+            colorPicker.value = post.category_color;
+            colorText.value = post.category_color;
+            document.getElementById('cardTitle').value = post.card_title;
+            document.getElementById('cardImage').value = post.card_image;
+            document.getElementById('fullContentTitle').value = post.full_content?.title || '';
+            tinymce.get('fullContentBody').setContent(post.full_content?.body || '');
 
             pagesContainer.innerHTML = '';
-            post.pages.forEach(page => addPageField(page.mediaUrl, page.title));
-
-            document.getElementById('fullContentImage').value = post.fullContent.image;
-            document.getElementById('fullContentTitle').value = post.fullContent.title;
-            document.getElementById('fullContentBodyEditor').innerHTML = post.fullContent.body || '';
+            post.pages?.forEach(page => addPageField(page.mediaUrl, page.text, page.showLink));
+            
+            document.getElementById('status').value = post.status;
+            const date = new Date(post.timestamp);
+            date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+            document.getElementById('timestamp').value = date.toISOString().slice(0, 16);
 
             modal.classList.remove('hidden');
+            updatePreview();
         }
 
-        function closeModal() {
-            modal.classList.add('hidden');
-        }
-
+        function closeModal() { modal.classList.add('hidden'); }
         addPostBtn.addEventListener('click', openModalForAdd);
         closeModalBtn.addEventListener('click', closeModal);
         cancelBtn.addEventListener('click', closeModal);
-
         colorPicker.addEventListener('input', (e) => colorText.value = e.target.value);
         colorText.addEventListener('input', (e) => colorPicker.value = e.target.value);
 
-        // --- Lógica de Categoria ---
-        categoryInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase();
-        });
-
-        function updateCategoryList() {
-            const categoryList = document.getElementById('category-list');
-            if (!categoryList) return;
-
-            const categories = [...new Set(postsData.map(post => post.category.toUpperCase()))];
-            categoryList.innerHTML = categories.map(cat => `<option value="${cat}"></option>`).join('');
-        }
-        
-        // --- Lógica do Editor Simples ---
-        document.querySelectorAll('.format-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                document.execCommand(button.dataset.format, false, null);
-            });
-        });
-
         // --- Lógica das Páginas Dinâmicas ---
         addPageBtn.addEventListener('click', () => addPageField());
-
-        function getYoutubeEmbedUrl(url) {
-            let videoId = null;
-            const shortsRegex = /youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/;
-            const watchRegex = /youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/;
-            
-            let match = url.match(shortsRegex);
-            if (match) videoId = match[1];
-            else {
-                match = url.match(watchRegex);
-                if (match) videoId = match[1];
-            }
-
-            if (videoId) return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&playsinline=1&showinfo=0&modestbranding=1`;
-            return null;
-        }
-
-        function addPageField(mediaUrl = '', title = '') {
+        function addPageField(mediaUrl = '', text = '', showLink = true) {
             const pageDiv = document.createElement('div');
-            pageDiv.className = 'page-item relative flex flex-col gap-4 p-4 bg-gray-50 rounded-lg border';
+            pageDiv.className = 'p-4 bg-white rounded-lg border space-y-4 page-item';
             pageDiv.innerHTML = `
-                <div class="flex justify-between items-start">
-                     <div class="flex-grow">
-                        <input type="text" class="page-media-url w-full p-2 border rounded-md" placeholder="URL da Imagem ou YouTube" value="${mediaUrl}" required>
-                    </div>
-                    <div class="ml-4 flex-shrink-0">
-                         <button type="button" class="preview-page-btn bg-indigo-500 text-white text-sm font-semibold py-1 px-3 rounded-md hover:bg-indigo-600">Pré-visualizar</button>
-                         <button type="button" class="remove-page-btn text-red-500 hover:text-red-700 font-bold text-2xl ml-2">&times;</button>
-                    </div>
+                <div>
+                    <label class="font-semibold text-sm text-gray-700 block mb-1">URL da Mídia da Página</label>
+                    <input type="url" class="page-media-url w-full p-2 border rounded-md" placeholder="URL da Imagem ou Vídeo (.mp4)" value="${mediaUrl}" required>
                 </div>
                 <div>
-                    <label class="font-semibold mb-1 block">Texto do Storie</label>
-                    <textarea class="page-title w-full p-2 border rounded-md" rows="3" placeholder="Texto que aparecerá no story">${title}</textarea>
+                    <label class="font-semibold text-sm text-gray-700 block mb-1">Texto da Página</label>
+                    <textarea class="page-text w-full p-2 border rounded-md h-24" placeholder="Subtítulo/Texto (pode usar HTML)">${text}</textarea>
                 </div>
-            `;
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" class="page-show-link h-4 w-4 rounded" ${showLink ? 'checked' : ''}>
+                        <label class="text-sm">Mostrar link para Matéria</label>
+                    </div>
+                    <button type="button" class="remove-page-btn text-red-500 hover:text-red-700 font-bold">Remover</button>
+                </div>`;
             pagesContainer.appendChild(pageDiv);
+            updatePreview();
         }
-
         pagesContainer.addEventListener('click', (e) => {
-            const pageItem = e.target.closest('.page-item');
-            if (!pageItem) return;
-
-            if (e.target.classList.contains('remove-page-btn')) {
-                pageItem.remove();
-            }
-
-            if (e.target.classList.contains('preview-page-btn')) {
-                const mediaUrl = pageItem.querySelector('.page-media-url').value;
-                const title = pageItem.querySelector('.page-title').value;
-                showPreview(mediaUrl, title);
-            }
-        });
-        
-        // --- Lógica da Pré-visualização ---
-        function showPreview(mediaUrl, title) {
-            const mediaContainer = document.getElementById('preview-media-container');
-            mediaContainer.innerHTML = '';
-            
-            const youtubeEmbedUrl = getYoutubeEmbedUrl(mediaUrl);
-
-            if (youtubeEmbedUrl) {
-                mediaContainer.innerHTML = `<iframe src="${youtubeEmbedUrl}" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            } else {
-                mediaContainer.innerHTML = `<img src="${mediaUrl || 'https://placehold.co/375x812/000000/FFFFFF?text=Sem+Mídia'}" class="w-full h-full object-cover" alt="Preview">`;
-            }
-
-            document.getElementById('preview-title').textContent = title;
-            feather.replace();
-            previewModal.classList.remove('hidden');
-        }
-
-        closePreviewBtn.addEventListener('click', () => {
-            document.getElementById('preview-media-container').innerHTML = '';
-            previewModal.classList.add('hidden');
+            if (e.target.classList.contains('remove-page-btn')) { e.target.closest('.page-item').remove(); updatePreview(); }
         });
 
-        // --- Lógica de Submissão do Formulário ---
-        postForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const postIndex = document.getElementById('post-index').value;
+        // --- Lógica de Submissão ---
+        saveBtn.addEventListener('click', async () => {
+            const postId = document.getElementById('post-id').value;
 
-            const pages = Array.from(pagesContainer.querySelectorAll('.page-item')).map(el => {
+            const pages = Array.from(pagesContainer.querySelectorAll('.page-item')).map((el) => {
                 const mediaUrl = el.querySelector('.page-media-url').value;
-                const isVideo = !!getYoutubeEmbedUrl(mediaUrl);
-                return {
-                    mediaUrl: mediaUrl,
-                    mediaType: isVideo ? 'video' : 'image',
-                    title: el.querySelector('.page-title').value,
-                };
-            }).filter(p => p.mediaUrl && p.title);
+                return { mediaUrl, mediaType: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', text: el.querySelector('.page-text').value, showLink: el.querySelector('.page-show-link').checked, };
+            }).filter(p => p.mediaUrl);
 
-            if (pages.length === 0) {
-                alert('Adicione pelo menos uma página com texto e mídia ao story.');
-                return;
-            }
+            if (pages.length === 0) { alert('Adicione pelo menos uma página ao story.'); return; }
 
-            const postData = {
-                category: categoryInput.value,
-                categoryColor: document.getElementById('categoryColor').value,
-                cardImage: document.getElementById('cardImage').value,
-                cardTitle: document.getElementById('cardTitle').value,
-                timestamp: postIndex !== '' && postsData[postIndex] ? postsData[postIndex].timestamp : new Date().toISOString(),
-                pages: pages,
-                fullContent: {
-                    image: document.getElementById('fullContentImage').value,
+            // Objeto de dados para o Supabase
+            const postToSave = {
+                category: document.getElementById('category').value,
+                category_color: document.getElementById('categoryColor').value,
+                card_image: document.getElementById('cardImage').value,
+                card_title: document.getElementById('cardTitle').value,
+                timestamp: new Date(document.getElementById('timestamp').value).toISOString(),
+                status: document.getElementById('status').value,
+                pages: pages, // Salva como JSONB
+                full_content: { // Salva como JSONB
                     title: document.getElementById('fullContentTitle').value,
-                    body: document.getElementById('fullContentBodyEditor').innerHTML
+                    body: tinymce.get('fullContentBody').getContent()
                 }
             };
 
-            if (postIndex === '') {
-                postsData.unshift(postData);
+            let error;
+            if (postId) {
+                // Atualizar post existente
+                const { error: updateError } = await supabase.from('stories').update(postToSave).eq('id', postId);
+                error = updateError;
             } else {
-                postsData[postIndex] = postData;
+                // Inserir novo post
+                const { error: insertError } = await supabase.from('stories').insert(postToSave);
+                error = insertError;
             }
 
-            renderTable();
-            updateCategoryList();
-            closeModal();
-        });
-
-        // --- Lógica de Exportação ---
-        exportBtn.addEventListener('click', () => {
-            const jsonString = JSON.stringify(postsData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'posts.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            if (error) {
+                alert('Erro ao salvar o post.');
+                console.error('Save error:', error);
+            } else {
+                closeModal();
+                loadPosts(); // Recarrega a tabela
+            }
         });
         
+        // --- Carga Inicial ---
+        loadPosts();
         feather.replace();
     });
     </script>
