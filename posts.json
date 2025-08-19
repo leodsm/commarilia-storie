@@ -1,0 +1,86 @@
+[
+  {
+    "id": "post_1724089200000",
+    "category": "CAPACITAÇÃO",
+    "categoryColor": "#7F0808",
+    "cardImage": "https://www.marilia.sp.gov.br/fotos/d295f95b64a7f8bc4b1346465d63001c.jpg",
+    "cardTitle": "Inscrições abertas para cursos gratuitos da carreta do Programa “Caminho para Capacitação”",
+    "timestamp": "2025-08-19T14:00:00.000Z",
+    "status": "published",
+    "pages": [
+      {
+        "mediaUrl": "https://www.marilia.sp.gov.br/fotos/d295f95b64a7f8bc4b1346465d63001c.jpg",
+        "mediaType": "image",
+        "text": "<h1>Cursos profissionais</h1><p>Nas áreas de Panificação, Açougue, Assistente de Cabeleireiro, Manicure e Pedicure e Barbeiro serão ofertados entre os dias 25/08 e 05/09</p>",
+        "showLink": true
+      },
+      {
+        "mediaUrl": "https://www.marilia.sp.gov.br/fotos/7a483c8648c7e5f5adaf52d8a12007ab.jpg",
+        "mediaType": "image",
+        "text": "<h2>Inscrições abertas</h2><p>Para os cursos promovidos na carreta do Programa “Caminho da Capacitação”.</p>",
+        "showLink": false
+      },
+      {
+        "mediaUrl": "https://www.marilia.sp.gov.br/fotos/e65c9afd6fd83bca7ad7c204658f3f28.jpg",
+        "mediaType": "image",
+        "text": "<h2>Oportunidades</h2><p>Em Marília, serão ofertados, entre os dias 25/08 e 05/09, cursos gratuitos de capacitação em várias áreas.</p>",
+        "showLink": false
+      }
+    ],
+    "fullContent": {
+      "image": "https://www.marilia.sp.gov.br/fotos/d295f95b64a7f8bc4b1346465d63001c.jpg",
+      "title": "Cursos profissionais nas áreas de Panificação, Açougue, Assistente de Cabeleireiro, Manicure e Pedicure e Barbeiro",
+      "body": "<p><strong>Continuam abertas as inscrições</strong> para os cursos promovidos na carreta do Programa “Caminho da Capacitação – Transformando vidas com educação e oportunidades”.</p><p>Em Marília, serão ofertados, entre os dias 25/08 e 05/09, cursos gratuitos de capacitação em várias áreas.</p>"
+    }
+  },
+  {
+    "id": "post_1724089260000",
+    "category": "COMPORTAMENTO",
+    "categoryColor": "#3b82f6",
+    "cardImage": "https://images.unsplash.com/photo-1615477618234-c79fcdf30fe2?q=80&w=699&auto=format&fit=crop",
+    "cardTitle": "Psicóloga alerta para danos da exposição infantil nas redes",
+    "timestamp": "2025-08-19T12:00:00.000Z",
+    "status": "published",
+    "pages": [
+      {
+        "mediaUrl": "https://images.unsplash.com/photo-1516641396415-3b501f0134a2?q=80&w=900&auto=format&fit=crop",
+        "mediaType": "image",
+        "text": "<h1>Riscos da vida digital</h1><p>Especialistas alertam para os perigos da exposição excessiva de crianças na internet.</p>",
+        "showLink": true
+      },
+      {
+        "mediaUrl": "https://plus.unsplash.com/premium_photo-1725075084497-d0d4143705f2?q=80&w=1170&auto=format&fit=crop",
+        "mediaType": "image",
+        "text": "<h2>Como proteger</h2><p>Regras claras e diálogo são fundamentais para garantir a segurança dos pequenos no ambiente online.</p>",
+        "showLink": true
+      }
+    ],
+    "fullContent": {
+      "image": "https://images.unsplash.com/photo-1615477618234-c79fcdf30fe2?q=80&w=699&auto=format&fit=crop",
+      "title": "Psicóloga alerta para danos da exposição infantil nas redes",
+      "body": "<p>A denúncia do influenciador Felca reacendeu o debate sobre a exposição de crianças e adolescentes nas redes sociais. A psicóloga Maria Silva alerta para os riscos psicológicos e sociais envolvidos.</p>"
+    }
+  },
+  {
+    "id": "post_1724180400000",
+    "category": "TECNOLOGIA",
+    "categoryColor": "#10b981",
+    "cardImage": "https://images.unsplash.com/photo-1550745165-9bc0b252726a?q=80&w=1170&auto=format&fit=crop",
+    "cardTitle": "Nova IA promete revolucionar a criação de vídeos",
+    "timestamp": "2025-08-20T11:00:00.000Z",
+    "status": "scheduled",
+    "pages": [
+      {
+        "mediaUrl": "https://plus.unsplash.com/premium_video-1689073307936-a3a954854928?q=80&w=1000&auto=format&fit=crop",
+        "mediaType": "video",
+        "text": "<h1>O Futuro é Agora</h1><p>Conheça a tecnologia que transforma texto em vídeos de alta qualidade em segundos.</p>",
+        "showLink": true
+      }
+    ],
+    "fullContent": {
+      "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726a?q=80&w=1170&auto=format&fit=crop",
+      "title": "Nova Inteligência Artificial promete revolucionar a criação de vídeos",
+      "body": "<p>A startup 'Visionary AI' lançou hoje um modelo de inteligência artificial capaz de gerar clipes de vídeo realistas a partir de simples comandos de texto. A tecnologia pode impactar profundamente as indústrias de cinema, publicidade e conteúdo digital.</p>"
+    }
+  }
+]
