@@ -105,6 +105,10 @@
                                 <input type="text" id="fullContentTitle" placeholder="Título que aparece na matéria completa" class="w-full p-3 border rounded-lg" required>
                             </div>
                             <div>
+                                <label for="fullContentImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem da Matéria</label>
+                                <input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
+                            </div>
+                            <div>
                                 <label for="fullContentBody" class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label>
                                 <textarea id="fullContentBody" placeholder="Use o editor para formatar o texto..."></textarea>
                             </div>
@@ -208,7 +212,7 @@
         const cancelBtn = document.getElementById('cancel-btn');
         const saveBtn = document.getElementById('save-btn');
 
-        // --- Live Preview Player (mesma lógica de antes) ---
+        // --- Live Preview Player ---
         class PreviewPlayer {
             constructor(domElements) { this.dom = domElements; this.currentPost = null; this.currentPageIndex = 0; this.init(); }
             init() { this.dom.prevArea.addEventListener('click', () => this.prevPage()); this.dom.nextArea.addEventListener('click', () => this.nextPage()); }
@@ -294,7 +298,7 @@
                 return `
                 <tr class="border-b">
                     <td class="py-3 px-4">
-                        <div class="font-semibold">${post.card_title}</div>
+                        <div class="font-semibold">${post.cardtitle}</div>
                         <div class="text-xs text-gray-500">${post.category}</div>
                     </td>
                     <td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td>
@@ -317,7 +321,7 @@
             }
             if (e.target.classList.contains('delete-btn')) {
                 const post = postsData.find(p => p.id == postId);
-                if (confirm(`Tem certeza que deseja excluir o post "${post.card_title}"?`)) {
+                if (confirm(`Tem certeza que deseja excluir o post "${post.cardtitle}"?`)) {
                     const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
                     if (error) {
                         alert('Erro ao excluir o post.');
@@ -337,7 +341,6 @@
             pagesContainer.innerHTML = '';
             tinymce.get('fullContentBody').setContent('');
             addPageField();
-            // Define a data atual como padrão
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('timestamp').value = now.toISOString().slice(0, 16);
@@ -353,12 +356,13 @@
             modalTitle.textContent = 'Editar Post';
             
             document.getElementById('category').value = post.category;
-            colorPicker.value = post.category_color;
-            colorText.value = post.category_color;
-            document.getElementById('cardTitle').value = post.card_title;
-            document.getElementById('cardImage').value = post.card_image;
-            document.getElementById('fullContentTitle').value = post.full_content?.title || '';
-            tinymce.get('fullContentBody').setContent(post.full_content?.body || '');
+            colorPicker.value = post.categorycolor;
+            colorText.value = post.categorycolor;
+            document.getElementById('cardTitle').value = post.cardtitle;
+            document.getElementById('cardImage').value = post.cardimage;
+            document.getElementById('fullContentTitle').value = post.fullcontent?.title || '';
+            document.getElementById('fullContentImage').value = post.fullcontent?.image || '';
+            tinymce.get('fullContentBody').setContent(post.fullcontent?.body || '');
 
             pagesContainer.innerHTML = '';
             post.pages?.forEach(page => addPageField(page.mediaUrl, page.text, page.showLink));
@@ -418,17 +422,18 @@
 
             if (pages.length === 0) { alert('Adicione pelo menos uma página ao story.'); return; }
 
-            // Objeto de dados para o Supabase
+            // Objeto de dados para o Supabase com os nomes corretos das colunas
             const postToSave = {
                 category: document.getElementById('category').value,
-                category_color: document.getElementById('categoryColor').value,
-                card_image: document.getElementById('cardImage').value,
-                card_title: document.getElementById('cardTitle').value,
+                categorycolor: document.getElementById('categoryColor').value,
+                cardimage: document.getElementById('cardImage').value,
+                cardtitle: document.getElementById('cardTitle').value,
                 timestamp: new Date(document.getElementById('timestamp').value).toISOString(),
                 status: document.getElementById('status').value,
-                pages: pages, // Salva como JSONB
-                full_content: { // Salva como JSONB
+                pages: pages,
+                fullcontent: { 
                     title: document.getElementById('fullContentTitle').value,
+                    image: document.getElementById('fullContentImage').value,
                     body: tinymce.get('fullContentBody').getContent()
                 }
             };
