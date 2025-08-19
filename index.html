@@ -1,188 +1,469 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ComMarília - Notícias</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- CSS Externo -->
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComMarília - Player de Story Otimizado</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-50">
-  <header class="p-4 text-center font-bold text-2xl text-slate-800">
-    Com<span class="text-orange-500">Marília</span>
-  </header>
-  <main class="max-w-5xl mx-auto px-4 py-8">
-    <h2 class="text-2xl font-semibold mb-6 text-slate-700">Últimas Notícias</h2>
-    <div id="news-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Cards de carregamento -->
-        <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
-        <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
-        <div class="animate-pulse bg-slate-200 rounded-lg shadow-md h-64"></div>
-    </div>
-  </main>
+<body class="bg-gray-100 text-gray-800">
 
-  <!-- Player de Story -->
-  <div id="story-viewer" class="fixed inset-0 bg-black bg-opacity-95 z-50 flex justify-center items-center hidden">
-    <div class="relative w-full max-w-md h-full max-h-[95vh] aspect-[9/16] bg-gray-900 rounded-lg overflow-hidden">
-      <!-- Barras de Progresso -->
-      <div id="progress-bars" class="absolute top-2 left-2 right-2 h-1 flex gap-1 z-20"></div>
-      
-      <!-- Conteúdo do Story -->
-      <div id="story-media-container" class="w-full h-full"></div>
-      
-      <!-- Overlay com Texto -->
-      <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/70 to-transparent z-10">
-        <div id="story-text" class="text-white text-2xl font-bold text-shadow"></div>
-      </div>
-      
-      <!-- Controles de Navegação -->
-      <div class="absolute top-0 left-0 w-1/3 h-full z-20" id="story-prev"></div>
-      <div class="absolute top-0 right-0 w-2/3 h-full z-20" id="story-next"></div>
-      
-      <button id="close-story" class="absolute top-3 right-3 text-white text-4xl z-30">&times;</button>
-    </div>
-  </div>
+    <!-- Menu Lateral -->
+    <aside id="side-menu" class="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-[70]">
+        <div class="p-6 flex justify-between items-center border-b">
+            <div class="text-xl font-black">
+                <span class="logo-text-com">Com</span><span class="logo-text-marilia">Marília.</span>
+            </div>
+            <button id="close-menu-btn" class="text-gray-500 hover:text-gray-800" aria-label="Fechar menu">
+                <i data-feather="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <nav class="p-6">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Categorias</h2>
+            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="home" class="w-5 h-5"></i><span>Início</span></a>
+            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="globe" class="w-5 h-5"></i><span>Mundo</span></a>
+            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="trending-up" class="w-5 h-5"></i><span>Economia</span></a>
+            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="award" class="w-5 h-5"></i><span>Esportes</span></a>
+            <a href="#" class="flex items-center gap-4 py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i data-feather="at-sign" class="w-5 h-5"></i><span>Contato</span></a>
+        </nav>
+    </aside>
+    <div id="menu-overlay" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden backdrop-blur-sm"></div>
 
-  <script>
-    // --- Configuração do Supabase ---
-    const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
-    const { createClient } = supabase;
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    <!-- Cabeçalho Principal -->
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center max-w-5xl">
+            <button id="menu-btn" class="text-gray-600 hover:text-gray-900 focus:outline-none" aria-label="Abrir menu">
+                <i data-feather="menu" class="w-6 h-6"></i>
+            </button>
+            <div class="text-2xl font-black">
+                <span class="logo-text-com">Com</span><span class="logo-text-marilia">Marília.</span>
+            </div>
+            <button class="text-gray-600 hover:text-gray-900 focus:outline-none" aria-label="Perfil do usuário">
+                <i data-feather="user" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </header>
 
-    // --- Elementos DOM ---
-    const grid = document.getElementById('news-grid');
-    const viewer = document.getElementById('story-viewer');
-    const progressBarsContainer = document.getElementById('progress-bars');
-    const storyMediaContainer = document.getElementById('story-media-container');
-    const storyText = document.getElementById('story-text');
-    const closeBtn = document.getElementById('close-story');
-    const prevBtn = document.getElementById('story-prev');
-    const nextBtn = document.getElementById('story-next');
+    <!-- Conteúdo Principal com os Cards de Notícias -->
+    <main class="container mx-auto px-4 py-8 max-w-5xl">
+        <h1 class="text-3xl font-bold mb-6 text-gray-900">Últimas Notícias</h1>
+        <div id="news-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards de Notícias são gerados dinamicamente -->
+        </div>
+    </main>
 
-    let postsData = [];
-    let currentStoryIndex = 0;
-    let currentPageIndex = 0;
-    let pageTimeout;
-
-    // --- Funções do Player de Story ---
-    function openStoryViewer(storyIdx) {
-        currentStoryIndex = storyIdx;
-        currentPageIndex = 0;
-        buildProgressBars();
-        displayCurrentPage();
-        viewer.classList.remove('hidden');
-    }
-
-    function closeStoryViewer() {
-        viewer.classList.add('hidden');
-        clearTimeout(pageTimeout);
-        storyMediaContainer.innerHTML = '';
-    }
-
-    function buildProgressBars() {
-        progressBarsContainer.innerHTML = '';
-        const story = postsData[currentStoryIndex];
-        story.pages.forEach(() => {
-            const barContainer = document.createElement('div');
-            barContainer.className = 'progress-bar-container';
-            const barFill = document.createElement('div');
-            barFill.className = 'progress-bar-fill';
-            barContainer.appendChild(barFill);
-            progressBarsContainer.appendChild(barContainer);
-        });
-    }
-
-    function displayCurrentPage() {
-        clearTimeout(pageTimeout);
-        const story = postsData[currentStoryIndex];
-        const page = story.pages[currentPageIndex];
-
-        const bars = progressBarsContainer.querySelectorAll('.progress-bar-fill');
-        bars.forEach((bar, index) => {
-            bar.classList.remove('active');
-            if (index < currentPageIndex) bar.style.width = '100%';
-            else bar.style.width = '0%';
-        });
-        bars[currentPageIndex].style.width = '100%';
-        bars[currentPageIndex].classList.add('active');
-
-        storyText.innerHTML = page.text || '';
-        if (page.mediaType === 'video') {
-            storyMediaContainer.innerHTML = `<video src="${page.mediaUrl}" class="w-full h-full object-cover" autoplay playsinline></video>`;
-            const video = storyMediaContainer.querySelector('video');
-            video.onended = () => nextPage();
-        } else {
-            storyMediaContainer.innerHTML = `<img src="${page.mediaUrl}" class="w-full h-full object-cover" alt="Story image">`;
-            pageTimeout = setTimeout(() => nextPage(), 5000);
-        }
-    }
-
-    function nextPage() {
-        const story = postsData[currentStoryIndex];
-        if (currentPageIndex < story.pages.length - 1) {
-            currentPageIndex++;
-            displayCurrentPage();
-        } else {
-            closeStoryViewer();
-        }
-    }
-
-    function prevPage() {
-        if (currentPageIndex > 0) {
-            currentPageIndex--;
-            displayCurrentPage();
-        }
-    }
-
-    // --- Lógica Principal ---
-    async function fetchAndRenderPosts() {
-        const { data, error } = await supabaseClient
-            .from('posts')
-            .select('*')
-            .eq('status', 'published')
-            .order('timestamp', { ascending: false });
-
-        if (error) {
-            console.error('Erro ao buscar posts:', error);
-            grid.innerHTML = `<p class="text-red-500 col-span-full">Não foi possível carregar as notícias.</p>`;
-            return;
-        }
-        
-        postsData = data;
-        grid.innerHTML = '';
-
-        if (postsData.length === 0) {
-            grid.innerHTML = `<p class="text-gray-500 col-span-full">Nenhuma notícia publicada no momento.</p>`;
-            return;
-        }
-
-        postsData.forEach((post, index) => {
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-lg shadow-md overflow-hidden cursor-pointer news-card';
-            // CORREÇÃO: Usando os nomes de coluna corretos (cardimage, cardtitle, categorycolor)
-            card.innerHTML = `
-                <img src="${post.cardimage}" alt="${post.cardtitle}" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/31343C?text=Imagem';">
-                <div class="p-4">
-                    <span class="text-xs font-semibold uppercase" style="color:${post.categorycolor};">${post.category}</span>
-                    <h3 class="text-lg font-semibold mt-1 text-slate-800">${post.cardtitle}</h3>
+    <!-- Player de Web Story -->
+    <div id="story-viewer" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="story-title-viewer">
+        <div id="story-container" class="relative w-full h-full sm:max-w-[414px] sm:h-[90vh] sm:max-h-[896px] bg-gray-900 sm:rounded-xl overflow-hidden shadow-2xl">
+            <div id="story-progress-container" class="absolute top-2 left-0 w-full flex gap-1 px-2 z-20"></div>
+            <div id="story-media-container" class="w-full h-full absolute inset-0"></div>
+            <header class="absolute top-8 left-0 w-full p-4 flex items-center gap-3 z-20">
+                <img id="story-publisher-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo do ComMarília">
+                <div>
+                    <div id="story-publisher-name" class="font-bold text-white text-sm">ComMarília</div>
+                    <div id="story-time" class="text-white/80 text-xs"></div>
                 </div>
-            `;
-            card.addEventListener('click', () => openStoryViewer(index));
-            grid.appendChild(card);
-        });
-    }
+            </header>
+            <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
+                <div id="story-title-viewer" class="text-2xl font-bold leading-tight text-shadow"></div>
+            </div>
+            <div id="prev-story-area" class="absolute left-0 top-0 h-full w-1/3 cursor-pointer z-30" aria-label="Página anterior do story"></div>
+            <div id="next-story-area" class="absolute right-0 top-0 h-full w-1/3 cursor-pointer z-30" aria-label="Próxima página do story"></div>
+            <div class="absolute top-8 right-4 flex items-center gap-2 z-30">
+                 <button id="share-story-btn" class="text-white bg-black/30 rounded-full p-2" aria-label="Compartilhar story">
+                    <i data-feather="share-2" class="w-6 h-6"></i>
+                </button>
+                <button id="close-story-btn" class="text-white bg-black/30 rounded-full p-2" aria-label="Fechar story">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="full-story-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer">
+                <div class="inline-flex flex-col items-center gap-1 text-white animate-bounce">
+                    <i data-feather="chevron-up" class="w-6 h-6"></i>
+                    <span class="font-semibold text-sm">Matéria Completa</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    // --- Event Listeners ---
-    closeBtn.addEventListener('click', closeStoryViewer);
-    nextBtn.addEventListener('click', nextPage);
-    prevBtn.addEventListener('click', prevPage);
+    <!-- Modal da Matéria Completa -->
+    <div id="story-modal" class="fixed inset-0 z-[80] flex items-end sm:items-start sm:pt-12 justify-center" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div id="story-modal-overlay" class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div id="story-modal-content" class="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] sm:max-h-[calc(100vh-4rem)] overflow-y-auto hide-scrollbar">
+            <header class="sticky top-0 bg-white/80 backdrop-blur-lg p-2 z-10 text-center">
+                <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto"></div>
+                <button id="close-modal-btn" class="absolute top-2 right-3 text-gray-500 hover:text-black" aria-label="Fechar matéria">
+                    <i data-feather="x" class="w-7 h-7"></i>
+                </button>
+            </header>
+            <article>
+                <img id="modal-image" src="" class="w-full h-64 object-cover" alt="">
+                <div class="p-6 md:p-8">
+                    <h2 id="modal-title" class="text-3xl font-bold mb-4 leading-tight text-gray-900"></h2>
+                    <div id="modal-text" class="text-gray-700 space-y-4 text-base leading-relaxed prose max-w-none"></div>
+                </div>
+            </article>
+        </div>
+    </div>
 
-    // --- Carga Inicial ---
-    fetchAndRenderPosts();
-  </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Configuração do Supabase ---
+        const supabaseUrl = 'https://usagnogpivjvpkbjuxzr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzYWdub2dwaXZqdnBrYmp1eHpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzExMDksImV4cCI6MjA3MTIwNzEwOX0.AKUhd8Cx3S63xkzVnVTXnlz_kTnSfFhF38mVjNc-ee4';
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        class App {
+            constructor() {
+                this.postsData = [];
+                this.ui = new UI();
+                this.storyPlayer = new StoryPlayer(this.ui.getStoryPlayerDOM(), (storyIndex) => this.postsData[storyIndex]);
+            }
+
+            async init() {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('posts')
+                        .select('*')
+                        .eq('status', 'published')
+                        .order('timestamp', { ascending: false });
+
+                    if (error) throw error;
+
+                    this.postsData = data;
+                    this.ui.renderNewsGrid(this.postsData);
+                    this.ui.initializeLazyLoading();
+                    this.ui.setupEventListeners(
+                        (storyIndex) => this.storyPlayer.open(storyIndex)
+                    );
+                    
+                    feather.replace();
+
+                } catch (error) {
+                    console.error("Falha ao inicializar a aplicação:", error);
+                    this.ui.displayError("Não foi possível carregar as notícias. Tente novamente mais tarde.");
+                }
+            }
+        }
+
+        class UI {
+            constructor() {
+                this.dom = {
+                    newsGrid: document.getElementById('news-grid'),
+                    menuBtn: document.getElementById('menu-btn'),
+                    closeMenuBtn: document.getElementById('close-menu-btn'),
+                    sideMenu: document.getElementById('side-menu'),
+                    menuOverlay: document.getElementById('menu-overlay'),
+                };
+            }
+
+            renderNewsGrid(postsData) {
+                if (!this.dom.newsGrid) return;
+                this.dom.newsGrid.innerHTML = postsData.map((post, index) => `
+                    <div class="news-card relative rounded-xl shadow-lg overflow-hidden cursor-pointer h-[480px] group" data-story-index="${index}" role="button" tabindex="0" aria-label="Abrir story: ${post.cardtitle}">
+                        <img data-src="${post.cardimage}" alt="${post.cardtitle}" class="lazy w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-in-out">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 p-5 text-white z-10">
+                            <span class="text-white text-xs font-bold px-3 py-1 rounded-full" style="background-color: ${post.categorycolor};">${post.category}</span>
+                            <h2 class="text-xl font-bold mt-2 leading-tight text-shadow">${post.cardtitle}</h2>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            initializeLazyLoading() {
+                const lazyImages = document.querySelectorAll('img.lazy');
+                if ("IntersectionObserver" in window) {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                img.src = img.dataset.src;
+                                img.classList.remove('lazy');
+                                observer.unobserve(img);
+                            }
+                        });
+                    });
+                    lazyImages.forEach(img => observer.observe(img));
+                } else {
+                    lazyImages.forEach(img => img.src = img.dataset.src);
+                }
+            }
+
+            setupEventListeners(onCardClick) {
+                this.dom.newsGrid?.addEventListener('click', (e) => {
+                    const card = e.target.closest('.news-card');
+                    if (card) onCardClick(parseInt(card.dataset.storyIndex));
+                });
+                this.dom.newsGrid?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const card = e.target.closest('.news-card');
+                        if (card) { e.preventDefault(); onCardClick(parseInt(card.dataset.storyIndex)); }
+                    }
+                });
+                const toggleMenu = () => {
+                    const isOpen = this.dom.sideMenu.classList.toggle('open');
+                    this.dom.menuOverlay.classList.toggle('hidden');
+                    if (isOpen) this.dom.closeMenuBtn.focus();
+                    else this.dom.menuBtn.focus();
+                };
+                this.dom.menuBtn?.addEventListener('click', toggleMenu);
+                this.dom.closeMenuBtn?.addEventListener('click', toggleMenu);
+                this.dom.menuOverlay?.addEventListener('click', toggleMenu);
+            }
+
+            getStoryPlayerDOM() {
+                return {
+                    viewer: document.getElementById('story-viewer'),
+                    container: document.getElementById('story-container'),
+                    progressContainer: document.getElementById('story-progress-container'),
+                    mediaContainer: document.getElementById('story-media-container'),
+                    title: document.getElementById('story-title-viewer'),
+                    time: document.getElementById('story-time'),
+                    closeBtn: document.getElementById('close-story-btn'),
+                    shareBtn: document.getElementById('share-story-btn'),
+                    nextArea: document.getElementById('next-story-area'),
+                    prevArea: document.getElementById('prev-story-area'),
+                    swipeUp: document.getElementById('full-story-swipe-up'),
+                    modal: document.getElementById('story-modal'),
+                    modalOverlay: document.getElementById('story-modal-overlay'),
+                    closeModalBtn: document.getElementById('close-modal-btn'),
+                    modalImage: document.getElementById('modal-image'),
+                    modalTitle: document.getElementById('modal-title'),
+                    modalText: document.getElementById('modal-text'),
+                };
+            }
+
+            displayError(message) {
+                if (this.dom.newsGrid) {
+                    this.dom.newsGrid.innerHTML = `<p class="col-span-full text-center text-red-500">${message}</p>`;
+                }
+            }
+        }
+
+        class StoryPlayer {
+            constructor(dom, getStoryDataCallback) {
+                this.dom = dom;
+                this.getStoryData = getStoryDataCallback;
+                this.state = { currentStoryIndex: 0, currentPageIndex: 0, isPaused: false };
+                this.progressTimer = null;
+                this.touchStartX = 0;
+                this.init();
+            }
+
+            init() {
+                this.dom.closeBtn?.addEventListener('click', () => this.close());
+                this.dom.nextArea?.addEventListener('click', () => this.nextPage());
+                this.dom.prevArea?.addEventListener('click', () => this.prevPage());
+                this.dom.swipeUp?.addEventListener('click', () => this.openModal());
+                this.dom.shareBtn?.addEventListener('click', () => this.shareStory());
+
+                const pauseStory = () => { this.state.isPaused = true; };
+                const resumeStory = () => { this.state.isPaused = false; };
+                this.dom.container.addEventListener('mousedown', pauseStory);
+                this.dom.container.addEventListener('touchstart', pauseStory, { passive: true });
+                this.dom.container.addEventListener('mouseup', resumeStory);
+                this.dom.container.addEventListener('touchend', resumeStory);
+
+                document.addEventListener('keydown', (e) => {
+                    if (this.dom.viewer.classList.contains('open')) {
+                        if (e.key === 'ArrowRight') this.nextPage();
+                        if (e.key === 'ArrowLeft') this.prevPage();
+                        if (e.key === 'Escape') this.close();
+                    }
+                });
+                this.dom.container.addEventListener('touchstart', (e) => { this.touchStartX = e.touches[0].clientX; }, { passive: true });
+                this.dom.container.addEventListener('touchend', (e) => {
+                    const touchEndX = e.changedTouches[0].clientX;
+                    if (this.touchStartX - touchEndX > 50) this.nextPage();
+                    if (touchEndX - this.touchStartX > 50) this.prevPage();
+                });
+
+                this.dom.closeModalBtn?.addEventListener('click', () => this.closeModal());
+                this.dom.modalOverlay?.addEventListener('click', () => this.closeModal());
+            }
+
+            open(storyIndex) {
+                this.state.currentStoryIndex = storyIndex;
+                this.state.currentPageIndex = 0;
+                this.state.isPaused = false;
+                this.updatePage(true);
+                this.dom.viewer?.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            close() {
+                this.dom.viewer?.classList.remove('open');
+                document.body.style.overflow = '';
+                this.dom.mediaContainer.innerHTML = '';
+                cancelAnimationFrame(this.progressTimer);
+            }
+
+            updatePage(isFirstPage = false) {
+                const story = this.getStoryData(this.state.currentStoryIndex);
+                const page = story?.pages?.[this.state.currentPageIndex];
+                if (!page) { this.close(); return; }
+
+                if(isFirstPage) this.buildProgressBars();
+                this.updateProgressBars();
+                
+                this.dom.mediaContainer.innerHTML = '';
+                const mediaElement = page.mediaType === 'video' ? document.createElement('video') : document.createElement('img');
+                mediaElement.src = page.mediaUrl;
+                mediaElement.className = "w-full h-full object-cover";
+                if (page.mediaType === 'video') {
+                    mediaElement.autoplay = true; mediaElement.muted = true; mediaElement.loop = true; mediaElement.playsInline = true;
+                }
+                this.dom.mediaContainer.appendChild(mediaElement);
+
+                this.dom.title.innerHTML = page.text;
+                this.dom.time.textContent = this.formatTimeAgo(story.timestamp);
+                this.dom.swipeUp.style.display = page.showLink ? 'block' : 'none';
+
+                this.startProgressBar();
+            }
+
+            nextPage() {
+                const story = this.getStoryData(this.state.currentStoryIndex);
+                if (this.state.currentPageIndex < story.pages.length - 1) {
+                    this.state.currentPageIndex++;
+                    this.updatePage();
+                } else {
+                    this.close();
+                }
+            }
+
+            prevPage() {
+                if (this.state.currentPageIndex > 0) {
+                    this.state.currentPageIndex--;
+                    this.updatePage();
+                }
+            }
+
+            buildProgressBars() {
+                this.dom.progressContainer.innerHTML = '';
+                const story = this.getStoryData(this.state.currentStoryIndex);
+                story.pages.forEach(() => {
+                    const bar = document.createElement('div');
+                    bar.className = 'progress-bar';
+                    bar.innerHTML = `<div class="progress-bar-inner"></div>`;
+                    this.dom.progressContainer.appendChild(bar);
+                });
+            }
+
+            updateProgressBars() {
+                const bars = this.dom.progressContainer.querySelectorAll('.progress-bar-inner');
+                bars.forEach((bar, index) => {
+                    bar.classList.remove('active');
+                    bar.style.transition = 'none';
+                    bar.style.transform = 'scaleX(0)';
+                    if (index < this.state.currentPageIndex) {
+                        bar.style.transform = 'scaleX(1)';
+                    }
+                });
+            }
+
+            startProgressBar() {
+                cancelAnimationFrame(this.progressTimer);
+                const DURATION = 5000;
+                let startTime = null;
+                const bar = this.dom.progressContainer.querySelectorAll('.progress-bar-inner')[this.state.currentPageIndex];
+                if (!bar) return;
+
+                const animate = (timestamp) => {
+                    if (!startTime) startTime = timestamp;
+                    
+                    if (!this.state.isPaused) {
+                        const elapsed = timestamp - startTime;
+                        const progress = Math.min(elapsed / DURATION, 1);
+                        bar.style.transform = `scaleX(${progress})`;
+
+                        if (progress >= 1) {
+                            this.nextPage();
+                            return;
+                        }
+                    } else {
+                        const currentProgress = parseFloat(bar.style.transform.replace('scaleX(', ''));
+                        startTime = timestamp - (currentProgress * DURATION);
+                    }
+                    this.progressTimer = requestAnimationFrame(animate);
+                };
+                this.progressTimer = requestAnimationFrame(animate);
+            }
+            
+            async shareStory() {
+                const story = this.getStoryData(this.state.currentStoryIndex);
+                const shareData = {
+                    title: story.cardtitle,
+                    text: `Confira esta notícia: ${story.cardtitle}`,
+                    url: window.location.href
+                };
+                try {
+                    if (navigator.share) {
+                        await navigator.share(shareData);
+                    } else {
+                        navigator.clipboard.writeText(shareData.url);
+                        alert('Link da notícia copiado para a área de transferência!');
+                    }
+                } catch (err) {
+                    console.error("Erro ao compartilhar:", err);
+                }
+            }
+
+            openModal() {
+                const story = this.getStoryData(this.state.currentStoryIndex);
+                if (!story.fullcontent) return;
+                this.state.isPaused = true;
+                this.dom.modalImage.src = story.fullcontent.image || story.cardimage;
+                this.dom.modalTitle.textContent = story.fullcontent.title || story.cardtitle;
+                this.dom.modalText.innerHTML = story.fullcontent.body;
+                this.dom.modal.classList.add('open');
+            }
+            
+            closeModal() {
+                this.dom.modal.classList.remove('open');
+                this.state.isPaused = false;
+            }
+
+            formatTimeAgo(isoString) {
+                const date = new Date(isoString);
+                const now = new Date();
+                const seconds = Math.floor((now - date) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + " anos atrás";
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + " meses atrás";
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + " dias atrás";
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + " horas atrás";
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + " minutos atrás";
+                return "agora mesmo";
+            }
+        }
+
+        const app = new App();
+        app.init();
+    });
+    </script>
 </body>
 </html>
