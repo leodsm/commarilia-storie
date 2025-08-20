@@ -11,12 +11,11 @@ body {
 .logo-text-marilia { color: #1D3557; }
 
 /* --- Efeitos Visuais --- */
-.text-shadow { text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
-.text-shadow-sm { text-shadow: 1px 1px 5px rgba(0,0,0,0.8); }
+.text-shadow { text-shadow: 1px 1px 4px rgba(0,0,0,0.6); }
 
 /* --- Lazy Loading Placeholder --- */
 img.lazy {
-    background-color: #e2e8f0; /* Um cinza claro como placeholder */
+    background-color: #e2e8f0;
 }
 
 /* --- Animações e Transições do Menu Lateral --- */
@@ -39,7 +38,7 @@ img.lazy {
 
 /* --- Animações e Transições do Player de Story --- */
 #story-viewer {
-    transform: scale(0.9);
+    transform: scale(0.95);
     opacity: 0;
     visibility: hidden;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0s 0.3s;
@@ -52,11 +51,11 @@ img.lazy {
 }
 
 /* --- Efeito de Sobreposição no Conteúdo do Story --- */
-#story-container::after {
+.story-slide-content::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%);
     z-index: 1;
 }
 
@@ -64,26 +63,16 @@ img.lazy {
 .progress-bar {
     flex: 1;
     height: 3px;
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.4);
     border-radius: 2px;
     overflow: hidden;
 }
 .progress-bar-inner {
     height: 100%;
     background-color: white;
-    width: 0%; /* Começa em 0 */
     transform-origin: left;
     transform: scaleX(0);
-    /* A transição será controlada via JS */
 }
-.progress-bar-inner.active {
-    transform: scaleX(1);
-}
-.progress-bar-inner.filled {
-    width: 100%;
-    transform: scaleX(1);
-}
-
 
 /* --- Animações e Transições do Modal --- */
 #story-modal {
@@ -105,17 +94,17 @@ img.lazy {
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-@media (min-width: 640px) { /* sm breakpoint */
-    #story-modal-content {
-        transform: translateY(-50px) scale(0.95);
-        opacity: 0;
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
-    }
-}
 #story-modal.open #story-modal-content {
-    transform: translateY(0) scale(1);
-    opacity: 1;
+    transform: translateY(0);
 }
+
+/* --- Estilos para o conteúdo do Modal --- */
+.prose-styles h1, .prose-styles h2, .prose-styles h3 { margin-bottom: 0.5em; font-weight: 700; }
+.prose-styles p { margin-bottom: 1em; line-height: 1.7; }
+.prose-styles a { color: #2563eb; text-decoration: underline; }
+.prose-styles ul, .prose-styles ol { margin-left: 1.5em; margin-bottom: 1em; }
+.prose-styles li { margin-bottom: 0.5em; }
+.prose-styles blockquote { border-left: 4px solid #ccc; padding-left: 1em; margin-left: 0; font-style: italic; }
 
 /* --- Utilitário para Esconder Barra de Rolagem --- */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
