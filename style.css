@@ -1,4 +1,4 @@
-/* --- Configurações Globais --- */
+/* --- CONFIGURAÇÕES GLOBAIS --- */
 body {
     font-family: 'Poppins', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -6,19 +6,19 @@ body {
     background-color: #f8f9fa;
 }
 
-/* --- Estilos da Marca --- */
+/* --- ESTILOS DA MARCA --- */
 .logo-text-com { color: #F4A261; }
 .logo-text-marilia { color: #1D3557; }
 
-/* --- Efeitos Visuais --- */
+/* --- EFEITOS VISUAIS --- */
 .text-shadow { text-shadow: 1px 1px 4px rgba(0,0,0,0.6); }
 
-/* --- Lazy Loading Placeholder --- */
+/* --- LAZY LOADING PLACEHOLDER --- */
 img.lazy {
     background-color: #e2e8f0;
 }
 
-/* --- Animações e Transições do Menu Lateral --- */
+/* --- ANIMAÇÕES E TRANSIÇÕES DO MENU LATERAL --- */
 #side-menu {
     transform: translateX(-100%);
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -27,7 +27,7 @@ img.lazy {
     transform: translateX(0);
 }
 
-/* --- Efeito de Sobreposição para Cards --- */
+/* --- EFEITO DE SOBREPOSIÇÃO PARA CARDS --- */
 .news-card::after {
     content: '';
     position: absolute;
@@ -36,7 +36,7 @@ img.lazy {
     transition: opacity 0.3s ease;
 }
 
-/* --- Animações e Transições do Player de Story --- */
+/* --- ANIMAÇÕES E TRANSIÇÕES DO PLAYER DE STORY --- */
 #story-viewer {
     transform: scale(0.95);
     opacity: 0;
@@ -50,7 +50,7 @@ img.lazy {
     transition-delay: 0s;
 }
 
-/* --- Efeito de Sobreposição no Conteúdo do Story --- */
+/* --- EFEITO DE SOBREPOSIÇÃO NO CONTEÚDO DO STORY --- */
 .story-slide-content::after {
     content: '';
     position: absolute;
@@ -59,7 +59,7 @@ img.lazy {
     z-index: 1;
 }
 
-/* --- Barras de Progresso do Story --- */
+/* --- BARRAS DE PROGRESSO DO STORY --- */
 .progress-bar {
     flex: 1;
     height: 3px;
@@ -74,7 +74,7 @@ img.lazy {
     transform: scaleX(0);
 }
 
-/* --- Animações e Transições do Modal --- */
+/* --- ANIMAÇÕES E TRANSIÇÕES DO MODAL --- */
 #story-modal {
     visibility: hidden;
     transition: visibility 0s 0.4s;
@@ -94,18 +94,78 @@ img.lazy {
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+@media (min-width: 640px) {
+    #story-modal-content {
+        transform: translateY(20px) scale(0.95);
+    }
+}
 #story-modal.open #story-modal-content {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
-/* --- Estilos para o conteúdo do Modal --- */
+/* --- ESTILOS PARA O CONTEÚDO DO MODAL --- */
 .prose-styles h1, .prose-styles h2, .prose-styles h3 { margin-bottom: 0.5em; font-weight: 700; }
 .prose-styles p { margin-bottom: 1em; line-height: 1.7; }
 .prose-styles a { color: #2563eb; text-decoration: underline; }
 .prose-styles ul, .prose-styles ol { margin-left: 1.5em; margin-bottom: 1em; }
 .prose-styles li { margin-bottom: 0.5em; }
-.prose-styles blockquote { border-left: 4px solid #ccc; padding-left: 1em; margin-left: 0; font-style: italic; }
+.prose-styles blockquote { border-left: 4px solid #ccc; padding-left: 1em; margin-left: 0; font-style: italic; color: #4a5568; }
 
-/* --- Utilitário para Esconder Barra de Rolagem --- */
+/* --- UTILITÁRIO PARA ESCONDER BARRA DE ROLAGEM --- */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* --- ESTILOS ESPECÍFICOS DO SWIPER --- */
+.swiper-container-vertical {
+    width: 100%;
+    height: 100%;
+}
+.swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- ESTILO DO PLAYER DE STORY EM DESKTOP --- */
+.story-slide-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #111;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+@media (min-width: 640px) {
+    .story-slide-content {
+        width: auto;
+        height: 90vh;
+        max-height: 896px;
+        aspect-ratio: 9 / 16;
+        border-radius: 0.75rem;
+    }
+}
+
+/* --- ESTILOS DO EDITOR DE CONTEÚDO --- */
+.editor-grid {
+    display: grid;
+    grid-template-columns: 300px 2fr 1fr;
+    height: 100vh;
+}
+.story-preview-container {
+    position: relative;
+    width: 100%;
+    max-width: 390px;
+    aspect-ratio: 9 / 19.5;
+    background-color: #111;
+    border-radius: 2.5rem;
+    overflow: hidden;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    border: 10px solid black;
+}
+.ql-editor { min-height: 150px; font-size: 1rem; }
+.page-editor-container .ql-editor { min-height: 80px; }
+.uppy-Dashboard-inner { border-radius: 0.5rem; border: 2px dashed #d1d5db; }
+.uppy-Dashboard-AddFiles-title { font-size: 1rem; }
+.page-item { cursor: grab; }
+.page-item:active { cursor: grabbing; }
+.sortable-ghost { opacity: 0.4; background: #c7d2fe; }
