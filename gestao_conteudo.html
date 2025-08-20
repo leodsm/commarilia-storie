@@ -19,9 +19,13 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- Quill.js Editor -->
+    <!-- Quill.js Editor (para o corpo da matéria e fallback) -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <!-- ContentTools (para edição no preview) -->
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/ContentTools/1.6.1/content-tools.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ContentTools/1.6.1/content-tools.min.js"></script>
 
     <style>
         body { font-family: 'Poppins', sans-serif; }
@@ -37,21 +41,14 @@
         #error-modal { transition: opacity 0.3s ease; }
 
         /* Estilos para o Quill Editor */
-        .ql-editor {
-            min-height: 200px;
-            font-size: 16px;
-        }
-        .page-editor-container .ql-editor {
-            min-height: 100px;
-        }
-        .ql-toolbar {
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-        }
-        .ql-container {
-            border-bottom-left-radius: 0.5rem;
-            border-bottom-right-radius: 0.5rem;
-        }
+        .ql-editor { min-height: 200px; font-size: 16px; }
+        .page-editor-container .ql-editor { min-height: 100px; }
+        .ql-toolbar { border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+        .ql-container { border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+
+        /* Ajustes para o ContentTools */
+        [data-editable] { cursor: pointer; }
+        .ct-widget, .ct-ignition__button { z-index: 100 !important; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -62,13 +59,10 @@
             <p class="text-gray-600 mt-1">Adicione, edite e gerencie as postagens do seu site via Supabase.</p>
         </header>
 
-        <!-- Seção da Tabela de Posts -->
         <div class="bg-white p-6 rounded-xl shadow-md">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Posts Atuais</h2>
-                <button id="add-post-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
-                    Adicionar Novo Post
-                </button>
+                <button id="add-post-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Adicionar Novo Post</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white">
@@ -97,7 +91,6 @@
                 <button type="button" id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
             </header>
             <main class="flex-grow overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-                <!-- Coluna do Formulário -->
                 <form id="post-form" class="lg:col-span-2 overflow-y-auto pr-4 space-y-6">
                     <input type="hidden" id="post-id">
                     
@@ -135,12 +128,13 @@
                     </div>
                 </form>
 
-                <!-- Coluna do Preview -->
                 <aside class="lg:col-span-1 flex items-center justify-center bg-gray-200 rounded-lg p-4 h-full overflow-hidden">
                     <div id="story-preview-viewer" class="relative w-full bg-gray-900 overflow-hidden shadow-2xl">
                         <div id="story-preview-container" class="absolute inset-0"><img id="story-preview-media" src="https://placehold.co/375x812/111827/4b5563?text=Preview" class="w-full h-full object-cover" alt="Imagem do story"><video id="story-preview-video" class="w-full h-full object-cover hidden" playsinline autoplay muted loop src=""></video></div>
                         <header class="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo ComMarília"><div><div class="font-bold text-white text-sm">ComMarília</div><div class="text-white/80 text-xs">agora mesmo</div></div></header>
-                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full"><div id="story-preview-text" class="text-2xl font-bold leading-tight text-shadow"></div></div>
+                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
+                            <div id="story-preview-text" class="text-2xl font-bold leading-tight text-shadow" data-editable data-name="story-text"></div>
+                        </div>
                         <div id="preview-prev-area" class="absolute left-0 top-0 h-full w-1/4 cursor-pointer z-30"></div>
                         <div id="preview-next-area" class="absolute right-0 top-0 h-full w-3/4 cursor-pointer z-30"></div>
                         <div id="story-preview-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer hidden"><div class="inline-flex flex-col items-center gap-1 text-white animate-bounce"><i data-feather="chevron-up" class="w-6 h-6"></i><span class="font-semibold text-sm">Matéria Completa</span></div></div>
@@ -203,6 +197,36 @@
             dom.errorModal.classList.add('opacity-0');
             setTimeout(() => dom.errorModal.classList.add('hidden'), 300);
         });
+
+        // --- ContentTools Initialization ---
+        const contentToolsEditor = ContentTools.EditorApp.get();
+        contentToolsEditor.init('[data-editable]', 'data-name');
+
+        contentToolsEditor.addEventListener('saved', function (ev) {
+            const regions = ev.detail().regions;
+            if (Object.keys(regions).length === 0) {
+                return;
+            }
+
+            // A única região editável é 'story-text'
+            const newContent = regions['story-text'];
+
+            const currentPageIndex = previewPlayer.currentPageIndex;
+            const pageItems = dom.pagesContainer.querySelectorAll('.page-item');
+            const currentPageForm = pageItems[currentPageIndex];
+
+            if (currentPageForm) {
+                const editorId = currentPageForm.querySelector('.page-editor-container').id;
+                const editorInstance = pageEditors.get(editorId);
+                
+                if (editorInstance && editorInstance.root.innerHTML !== newContent) {
+                    editorInstance.root.innerHTML = newContent;
+                }
+            }
+            
+            new ContentTools.FlashUI('ok');
+        });
+
 
         class PreviewPlayer {
             constructor(domElements) { this.dom = domElements; this.currentPost = null; this.currentPageIndex = 0; this.init(); }
