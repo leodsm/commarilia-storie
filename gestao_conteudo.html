@@ -179,8 +179,8 @@
 
         let postsData = [];
         let previewPlayer;
-        let mainEditor; // Instância do Quill para o corpo principal
-        let pageEditors = new Map(); // Mapa para as instâncias do Quill das páginas
+        let mainEditor;
+        let pageEditors = new Map();
 
         const dom = {
             addPostBtn: document.getElementById('add-post-btn'), tableBody: document.getElementById('posts-table-body'),
@@ -357,19 +357,19 @@
             document.getElementById('post-id').value = post.id;
             dom.modalTitle.textContent = 'Editar Post';
             
-            document.getElementById('category').value = post.category;
-            dom.colorPicker.value = post.category_color;
-            dom.colorText.value = post.category_color;
-            document.getElementById('cardTitle').value = post.card_title;
-            document.getElementById('cardImage').value = post.card_image;
-            document.getElementById('fullContentImage').value = post.full_content_image;
-            document.getElementById('fullContentTitle').value = post.full_content_title;
+            document.getElementById('category').value = post.category || '';
+            dom.colorPicker.value = post.category_color || '#2563eb';
+            dom.colorText.value = post.category_color || '#2563eb';
+            document.getElementById('cardTitle').value = post.card_title || '';
+            document.getElementById('cardImage').value = post.card_image || '';
+            document.getElementById('fullContentImage').value = post.full_content_image || '';
+            document.getElementById('fullContentTitle').value = post.full_content_title || '';
 
             dom.pagesContainer.innerHTML = '';
             pageEditors.clear();
             (post.story_pages || []).forEach(page => addPageField(page.media_url, page.title, page.show_full_link));
             
-            dom.statusSelect.value = post.status;
+            dom.statusSelect.value = post.status || 'draft';
             toggleSchedule(post.status === 'scheduled');
             if(post.status === 'scheduled' && post.timestamp) {
                 document.getElementById('publishTimestamp').value = new Date(post.timestamp).toISOString().slice(0, 16);
@@ -396,7 +396,7 @@
         function toggleSchedule(show) { dom.scheduleContainer.style.display = show ? 'block' : 'none'; }
 
         function addPageField(mediaUrl = '', text = '', showLink = true) {
-            const editorId = `page-editor-${Date.now()}-${Math.random()}`;
+            const editorId = `page-editor-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
             const pageDiv = document.createElement('div');
             pageDiv.className = 'p-4 bg-white rounded-lg border space-y-4 page-item';
             pageDiv.innerHTML = `
