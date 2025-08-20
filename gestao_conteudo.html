@@ -19,54 +19,38 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- TinyMCE com sua API Key -->
-    <script src="https://cdn.tiny.cloud/1/gx87tfmvctmsknsdaj797gowrr6jkyljbu6ftne9gduylkja/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- Quill.js Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
     <style>
         body { font-family: 'Poppins', sans-serif; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.375rem; }
         
-        /* Estilos para o preview do story */
-        #story-preview-viewer {
-            aspect-ratio: 9 / 16;
-            width: 100%;
-            max-width: 375px;
-            max-height: 100%;
-            border-radius: 2.5rem;
-            border: 10px solid black;
-            background-color: #000;
-        }
-
-        #story-preview-media, #story-preview-video {
-            object-fit: cover;
-        }
-
-        #story-preview-container::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
-            z-index: 1;
-        }
-        .story-preview-indicator {
-            width: 8px;
-            height: 8px;
-            background-color: rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            transition: all 0.4s ease;
-        }
-        .story-preview-indicator.active {
-            background-color: white;
-            transform: scale(1.2);
-        }
+        #story-preview-viewer { aspect-ratio: 9 / 16; width: 100%; max-width: 375px; max-height: 100%; border-radius: 2.5rem; border: 10px solid black; background-color: #000; }
+        #story-preview-media, #story-preview-video { object-fit: cover; }
+        #story-preview-container::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%); z-index: 1; }
+        .story-preview-indicator { width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.4); border-radius: 50%; transition: all 0.4s ease; }
+        .story-preview-indicator.active { background-color: white; transform: scale(1.2); }
         .text-shadow { text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
-        /* Esconde o branding do TinyMCE */
-        .tox-tinymce-aux { display: none !important; }
+        #error-modal { transition: opacity 0.3s ease; }
 
-        /* Modal de Erro */
-        #error-modal {
-            transition: opacity 0.3s ease;
+        /* Estilos para o Quill Editor */
+        .ql-editor {
+            min-height: 200px;
+            font-size: 16px;
+        }
+        .page-editor-container .ql-editor {
+            min-height: 100px;
+        }
+        .ql-toolbar {
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        .ql-container {
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
         }
     </style>
 </head>
@@ -120,69 +104,33 @@
                     <div class="p-4 bg-gray-50 rounded-lg border">
                         <h3 class="font-bold text-lg mb-4 border-b pb-2">Dados Principais</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label for="category" class="font-semibold text-sm text-gray-700 block mb-1">Categoria</label>
-                                <input type="text" id="category" placeholder="Ex: TECNOLOGIA" class="w-full p-3 border rounded-lg" required>
-                            </div>
-                            <div>
-                                <label for="categoryColor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label>
-                                <div class="flex items-center gap-2">
-                                    <input type="color" id="categoryColorValue" class="h-12 w-14 p-1 border rounded-lg cursor-pointer" value="#2563eb">
-                                    <input type="text" id="categoryColor" placeholder="Ex: #2563eb" class="w-full p-3 border rounded-lg" required>
-                                </div>
-                            </div>
-                            <div>
-                                <label for="cardTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label>
-                                <input type="text" id="cardTitle" placeholder="Título que aparece na página inicial" class="w-full p-3 border rounded-lg" required>
-                            </div>
-                            <div>
-                                <label for="cardImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem do Card</label>
-                                <input type="url" id="cardImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
-                            </div>
+                            <div><label for="category" class="font-semibold text-sm text-gray-700 block mb-1">Categoria</label><input type="text" id="category" placeholder="Ex: TECNOLOGIA" class="w-full p-3 border rounded-lg" required></div>
+                            <div><label for="categoryColor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label><div class="flex items-center gap-2"><input type="color" id="categoryColorValue" class="h-12 w-14 p-1 border rounded-lg cursor-pointer" value="#2563eb"><input type="text" id="categoryColor" placeholder="Ex: #2563eb" class="w-full p-3 border rounded-lg" required></div></div>
+                            <div><label for="cardTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label><input type="text" id="cardTitle" placeholder="Título que aparece na página inicial" class="w-full p-3 border rounded-lg" required></div>
+                            <div><label for="cardImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem do Card</label><input type="url" id="cardImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required></div>
                         </div>
                     </div>
                     
                     <div class="p-4 bg-gray-50 rounded-lg border">
                         <h3 class="font-bold text-lg mb-4 border-b pb-2">Matéria Completa</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label for="fullContentImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem da Matéria</label>
-                                <input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required>
-                            </div>
-                             <div>
-                                <label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label>
-                                <input type="text" id="fullContentTitle" placeholder="Título que aparece na matéria completa" class="w-full p-3 border rounded-lg" required>
-                            </div>
-                            <div>
-                                <label for="fullContentBody" class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label>
-                                <textarea id="fullContentBody" placeholder="Use o editor para formatar o texto..."></textarea>
-                            </div>
+                            <div><label for="fullContentImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem da Matéria</label><input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required></div>
+                            <div><label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label><input type="text" id="fullContentTitle" placeholder="Título que aparece na matéria completa" class="w-full p-3 border rounded-lg" required></div>
+                            <div><label class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label><div id="editor-container"></div></div>
                         </div>
                     </div>
                     
                     <div class="p-4 bg-gray-50 rounded-lg border">
                         <h3 class="font-bold text-lg mb-4 border-b pb-2">Páginas do Story</h3>
-                         <div id="pages-container" class="space-y-4">
-                            <!-- Páginas dinâmicas aqui -->
-                         </div>
+                         <div id="pages-container" class="space-y-4"></div>
                          <button type="button" id="add-page-btn" class="w-full mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Adicionar Página</button>
                     </div>
 
                     <div class="p-4 bg-gray-50 rounded-lg border">
                         <h3 class="font-bold text-lg mb-4 border-b pb-2">Publicação</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label for="status" class="font-semibold text-sm text-gray-700 block mb-1">Status</label>
-                                <select id="status" class="w-full p-3 border rounded-lg">
-                                    <option value="published">Publicado</option>
-                                    <option value="draft">Rascunho</option>
-                                    <option value="scheduled">Agendado</option>
-                                </select>
-                            </div>
-                            <div id="schedule-container" class="hidden">
-                                <label for="publishTimestamp" class="font-semibold text-sm text-gray-700 block mb-1">Data de Agendamento</label>
-                                <input type="datetime-local" id="publishTimestamp" class="w-full p-3 border rounded-lg">
-                            </div>
+                            <div><label for="status" class="font-semibold text-sm text-gray-700 block mb-1">Status</label><select id="status" class="w-full p-3 border rounded-lg"><option value="published">Publicado</option><option value="draft">Rascunho</option><option value="scheduled">Agendado</option></select></div>
+                            <div id="schedule-container" class="hidden"><label for="publishTimestamp" class="font-semibold text-sm text-gray-700 block mb-1">Data de Agendamento</label><input type="datetime-local" id="publishTimestamp" class="w-full p-3 border rounded-lg"></div>
                         </div>
                     </div>
                 </form>
@@ -190,28 +138,12 @@
                 <!-- Coluna do Preview -->
                 <aside class="lg:col-span-1 flex items-center justify-center bg-gray-200 rounded-lg p-4 h-full overflow-hidden">
                     <div id="story-preview-viewer" class="relative w-full bg-gray-900 overflow-hidden shadow-2xl">
-                        <div id="story-preview-container" class="absolute inset-0">
-                            <img id="story-preview-media" src="https://placehold.co/375x812/111827/4b5563?text=Preview" class="w-full h-full object-cover" alt="Imagem do story">
-                            <video id="story-preview-video" class="w-full h-full object-cover hidden" playsinline autoplay muted loop src=""></video>
-                        </div>
-                        <header class="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20">
-                            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo ComMarília">
-                            <div>
-                                <div class="font-bold text-white text-sm">ComMarília</div>
-                                <div class="text-white/80 text-xs">agora mesmo</div>
-                            </div>
-                        </header>
-                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
-                            <div id="story-preview-text" class="text-2xl font-bold leading-tight text-shadow"></div>
-                        </div>
+                        <div id="story-preview-container" class="absolute inset-0"><img id="story-preview-media" src="https://placehold.co/375x812/111827/4b5563?text=Preview" class="w-full h-full object-cover" alt="Imagem do story"><video id="story-preview-video" class="w-full h-full object-cover hidden" playsinline autoplay muted loop src=""></video></div>
+                        <header class="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo ComMarília"><div><div class="font-bold text-white text-sm">ComMarília</div><div class="text-white/80 text-xs">agora mesmo</div></div></header>
+                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full"><div id="story-preview-text" class="text-2xl font-bold leading-tight text-shadow"></div></div>
                         <div id="preview-prev-area" class="absolute left-0 top-0 h-full w-1/4 cursor-pointer z-30"></div>
                         <div id="preview-next-area" class="absolute right-0 top-0 h-full w-3/4 cursor-pointer z-30"></div>
-                        <div id="story-preview-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer hidden">
-                            <div class="inline-flex flex-col items-center gap-1 text-white animate-bounce">
-                                <i data-feather="chevron-up" class="w-6 h-6"></i>
-                                <span class="font-semibold text-sm">Matéria Completa</span>
-                            </div>
-                        </div>
+                        <div id="story-preview-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer hidden"><div class="inline-flex flex-col items-center gap-1 text-white animate-bounce"><i data-feather="chevron-up" class="w-6 h-6"></i><span class="font-semibold text-sm">Matéria Completa</span></div></div>
                         <div id="story-preview-indicators" class="absolute bottom-4 left-0 w-full flex justify-center items-center gap-2 z-20"></div>
                     </div>
                 </aside>
@@ -235,7 +167,6 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
-        // --- Configuração do Supabase ---
         const SUPABASE_URL = 'https://apdaldrcyugyjiwpodel.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZGFsZHJjeXVneWppd3BvZGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NDc0NDAsImV4cCI6MjA3MTIyMzQ0MH0.UX0uAej52mEC3vsk-GSRHB7jNYm0N7MEN5-rBk-6e7A';
         
@@ -243,46 +174,36 @@
         try {
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         } catch (error) {
-            console.error("Falha ao inicializar o cliente Supabase:", error);
-            showError("Não foi possível conectar ao Supabase. Verifique a URL e a Chave no código.");
-            return;
+            showError("Não foi possível conectar ao Supabase."); return;
         }
 
         let postsData = [];
         let previewPlayer;
-        let isTinyMceInitialized = false;
+        let mainEditor; // Instância do Quill para o corpo principal
+        let pageEditors = new Map(); // Mapa para as instâncias do Quill das páginas
 
-        // --- DOM Elements ---
-        const addPostBtn = document.getElementById('add-post-btn');
-        const tableBody = document.getElementById('posts-table-body');
-        const modal = document.getElementById('post-modal');
-        const modalTitle = document.getElementById('modal-title');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const postForm = document.getElementById('post-form');
-        const addPageBtn = document.getElementById('add-page-btn');
-        const pagesContainer = document.getElementById('pages-container');
-        const colorPicker = document.getElementById('categoryColorValue');
-        const colorText = document.getElementById('categoryColor');
-        const statusSelect = document.getElementById('status');
-        const scheduleContainer = document.getElementById('schedule-container');
-        const cancelBtn = document.getElementById('cancel-btn');
-        const saveBtn = document.getElementById('save-btn');
-        const errorModal = document.getElementById('error-modal');
-        const errorMessage = document.getElementById('error-message');
-        const closeErrorBtn = document.getElementById('close-error-btn');
+        const dom = {
+            addPostBtn: document.getElementById('add-post-btn'), tableBody: document.getElementById('posts-table-body'),
+            modal: document.getElementById('post-modal'), modalTitle: document.getElementById('modal-title'),
+            closeModalBtn: document.getElementById('close-modal-btn'), postForm: document.getElementById('post-form'),
+            addPageBtn: document.getElementById('add-page-btn'), pagesContainer: document.getElementById('pages-container'),
+            colorPicker: document.getElementById('categoryColorValue'), colorText: document.getElementById('categoryColor'),
+            statusSelect: document.getElementById('status'), scheduleContainer: document.getElementById('schedule-container'),
+            cancelBtn: document.getElementById('cancel-btn'), saveBtn: document.getElementById('save-btn'),
+            errorModal: document.getElementById('error-modal'), errorMessage: document.getElementById('error-message'),
+            closeErrorBtn: document.getElementById('close-error-btn'),
+        };
 
-        // --- Funções de UI (Modal de Erro) ---
         function showError(message) {
-            errorMessage.textContent = message;
-            errorModal.classList.remove('hidden');
-            setTimeout(() => errorModal.classList.remove('opacity-0'), 10);
+            dom.errorMessage.textContent = message;
+            dom.errorModal.classList.remove('hidden');
+            setTimeout(() => dom.errorModal.classList.remove('opacity-0'), 10);
         }
-        closeErrorBtn.addEventListener('click', () => {
-            errorModal.classList.add('opacity-0');
-            setTimeout(() => errorModal.classList.add('hidden'), 300);
+        dom.closeErrorBtn.addEventListener('click', () => {
+            dom.errorModal.classList.add('opacity-0');
+            setTimeout(() => dom.errorModal.classList.add('hidden'), 300);
         });
 
-        // --- Live Preview Player ---
         class PreviewPlayer {
             constructor(domElements) { this.dom = domElements; this.currentPost = null; this.currentPageIndex = 0; this.init(); }
             init() { this.dom.prevArea.addEventListener('click', () => this.prevPage()); this.dom.nextArea.addEventListener('click', () => this.nextPage()); }
@@ -326,47 +247,37 @@
         });
         
         function updatePreview() {
-            const pages = Array.from(pagesContainer.querySelectorAll('.page-item')).map((el, index) => {
+            const pages = Array.from(dom.pagesContainer.querySelectorAll('.page-item')).map((el, index) => {
                 const mediaUrl = el.querySelector('.page-media-url').value;
+                const editorId = el.querySelector('.page-editor-container').id;
+                const editorInstance = pageEditors.get(editorId);
+                const title = editorInstance ? editorInstance.root.innerHTML : '';
                 return { 
                     media_url: mediaUrl, 
                     media_type: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', 
-                    title: el.querySelector('.page-text').value, 
+                    title: title, 
                     show_full_link: el.querySelector('.page-show-link').checked,
                     order_index: index
                 };
             });
             previewPlayer.loadStory({ pages });
         }
-        postForm.addEventListener('input', updatePreview);
-        postForm.addEventListener('change', updatePreview);
+        dom.postForm.addEventListener('input', updatePreview);
 
-        // --- Lógica de Dados (Supabase) ---
         async function loadPosts() {
-            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando...</td></tr>`;
-            const { data, error } = await supabaseClient
-                .from('stories')
-                .select(`*, story_pages ( * )`)
-                .order('timestamp', { ascending: false });
-
+            dom.tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando...</td></tr>`;
+            const { data, error } = await supabaseClient.from('stories').select(`*, story_pages ( * )`).order('timestamp', { ascending: false });
             if (error) {
                 console.error('Erro ao buscar posts:', error);
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Falha ao carregar posts.</td></tr>`;
-                showError(`Falha ao buscar dados do Supabase. Verifique se a URL e a Chave estão corretas e se há conexão com a internet. Detalhes: ${error.message}`);
+                dom.tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Falha ao carregar posts.</td></tr>`;
+                showError(`Falha ao buscar dados do Supabase: ${error.message}`);
                 return;
             }
-            
-            data.forEach(story => {
-                if (story.story_pages) {
-                    story.story_pages.sort((a, b) => a.order_index - b.order_index);
-                }
-            });
-
+            data.forEach(story => { if (story.story_pages) { story.story_pages.sort((a, b) => a.order_index - b.order_index); } });
             postsData = data;
             renderTable();
         }
 
-        // --- Lógica da Tabela ---
         function formatDateTime(isoString) {
             if (!isoString) return 'N/A';
             const date = new Date(isoString);
@@ -374,31 +285,17 @@
         }
         function renderTable() {
             if (postsData.length === 0) { 
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado. Clique em "Adicionar Novo Post" para começar.</td></tr>`; 
+                dom.tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado.</td></tr>`; 
                 return; 
             }
-            
-            tableBody.innerHTML = postsData.map(post => {
+            dom.tableBody.innerHTML = postsData.map(post => {
                 const statusClasses = { published: 'bg-green-100 text-green-800', draft: 'bg-yellow-100 text-yellow-800', scheduled: 'bg-blue-100 text-blue-800' };
                 const statusText = { published: 'Publicado', draft: 'Rascunho', scheduled: 'Agendado' };
-                return `
-                <tr class="border-b">
-                    <td class="py-3 px-4">
-                        <div class="font-semibold">${post.card_title}</div>
-                        <div class="text-xs text-gray-500">${post.category}</div>
-                    </td>
-                    <td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td>
-                    <td class="py-3 px-4">${post.story_pages.length}</td>
-                    <td class="py-3 px-4 text-sm text-gray-600">${formatDateTime(post.timestamp)}</td>
-                    <td class="py-3 px-4">
-                        <button class="edit-btn text-blue-500 hover:text-blue-700 mr-4" data-id="${post.id}">Editar</button>
-                        <button class="delete-btn text-red-500 hover:text-red-700" data-id="${post.id}">Excluir</button>
-                    </td>
-                </tr>`;
+                return `<tr class="border-b"><td class="py-3 px-4"><div class="font-semibold">${post.card_title}</div><div class="text-xs text-gray-500">${post.category}</div></td><td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td><td class="py-3 px-4">${post.story_pages.length}</td><td class="py-3 px-4 text-sm text-gray-600">${formatDateTime(post.timestamp)}</td><td class="py-3 px-4"><button class="edit-btn text-blue-500 hover:text-blue-700 mr-4" data-id="${post.id}">Editar</button><button class="delete-btn text-red-500 hover:text-red-700" data-id="${post.id}">Excluir</button></td></tr>`;
             }).join('');
         }
 
-        tableBody.addEventListener('click', async (e) => {
+        dom.tableBody.addEventListener('click', async (e) => {
             const postId = e.target.dataset.id;
             if (!postId) return;
             if (e.target.classList.contains('edit-btn')) openModalForEdit(postId);
@@ -406,157 +303,140 @@
                 const post = postsData.find(p => p.id === postId);
                 if (confirm(`Tem certeza que deseja excluir o post "${post.card_title}"?`)) {
                     const { error: pageError } = await supabaseClient.from('story_pages').delete().match({ story_id: postId });
-                    if (pageError) { showError('Erro ao deletar páginas do story: ' + pageError.message); return; }
+                    if (pageError) { showError('Erro ao deletar páginas: ' + pageError.message); return; }
                     const { error: storyError } = await supabaseClient.from('stories').delete().match({ id: postId });
                     if (storyError) { showError('Erro ao deletar story: ' + storyError.message); return; }
                     await loadPosts();
                 }
             }
         });
+        
+        function initializeQuill(containerId, placeholder, content = '') {
+            const Font = Quill.import('formats/font');
+            Font.whitelist = ['sans-serif', 'serif', 'monospace', 'poppins'];
+            Quill.register(Font, true);
 
-        // --- Lógica do Editor e Modal ---
-        function initializeTinyMCE(callback) {
-            tinymce.init({
-                selector: 'textarea#fullContentBody',
-                height: 300,
-                menubar: false,
-                plugins: [
-                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                    'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'ai', 'uploadcare', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
-                ],
-                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-                tinycomments_mode: 'embedded',
-                tinycomments_author: 'Author name',
-                mergetags_list: [
-                  { value: 'First.Name', title: 'First Name' },
-                  { value: 'Email', title: 'Email' },
-                ],
-                ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
-                uploadcare_public_key: '3959c1d4b2fd323fb2b8',
-                setup: (editor) => {
-                    editor.on('change', updatePreview);
-                    editor.on('init', () => {
-                        isTinyMceInitialized = true;
-                        if (callback) callback(editor);
-                    });
-                }
+            const toolbarOptions = [
+                [{ 'font': Font.whitelist }, { 'size': ['small', false, 'large', 'huge'] }],
+                ['bold', 'italic', 'underline'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'align': [] }],
+                ['clean']
+            ];
+            const quill = new Quill(`#${containerId}`, {
+                modules: { toolbar: toolbarOptions },
+                theme: 'snow',
+                placeholder: placeholder,
             });
+            if (content) {
+                quill.root.innerHTML = content;
+            }
+            quill.on('text-change', updatePreview);
+            return quill;
         }
 
         function openModalForAdd() {
-            postForm.reset();
+            dom.postForm.reset();
             document.getElementById('post-id').value = '';
-            modalTitle.textContent = 'Adicionar Novo Post';
-            pagesContainer.innerHTML = '';
+            dom.modalTitle.textContent = 'Adicionar Novo Post';
+            dom.pagesContainer.innerHTML = '';
+            pageEditors.clear();
             addPageField();
-            statusSelect.value = 'published';
+            dom.statusSelect.value = 'published';
             toggleSchedule(false);
-            modal.classList.remove('hidden');
-
-            if (!isTinyMceInitialized) {
-                initializeTinyMCE(editor => editor.setContent(''));
-            } else {
-                tinymce.get('fullContentBody').setContent('');
-            }
+            dom.modal.classList.remove('hidden');
+            mainEditor = initializeQuill('editor-container', 'Corpo da matéria...');
             updatePreview();
         }
 
         function openModalForEdit(postId) {
             const post = postsData.find(p => p.id === postId);
             if (!post) return;
-            postForm.reset();
+            dom.postForm.reset();
             document.getElementById('post-id').value = post.id;
-            modalTitle.textContent = 'Editar Post';
+            dom.modalTitle.textContent = 'Editar Post';
             
             document.getElementById('category').value = post.category;
-            colorPicker.value = post.category_color;
-            colorText.value = post.category_color;
+            dom.colorPicker.value = post.category_color;
+            dom.colorText.value = post.category_color;
             document.getElementById('cardTitle').value = post.card_title;
             document.getElementById('cardImage').value = post.card_image;
             document.getElementById('fullContentImage').value = post.full_content_image;
             document.getElementById('fullContentTitle').value = post.full_content_title;
 
-            pagesContainer.innerHTML = '';
+            dom.pagesContainer.innerHTML = '';
+            pageEditors.clear();
             post.story_pages.forEach(page => addPageField(page.media_url, page.title, page.show_full_link));
             
-            statusSelect.value = post.status;
+            dom.statusSelect.value = post.status;
+            toggleSchedule(post.status === 'scheduled');
             if(post.status === 'scheduled') {
-                const date = new Date(post.timestamp);
-                document.getElementById('publishTimestamp').value = date.toISOString().slice(0, 16);
-                toggleSchedule(true);
-            } else {
-                toggleSchedule(false);
+                document.getElementById('publishTimestamp').value = new Date(post.timestamp).toISOString().slice(0, 16);
             }
 
-            modal.classList.remove('hidden');
-            
-            const content = post.full_content_body || '';
-            if (!isTinyMceInitialized) {
-                initializeTinyMCE(editor => editor.setContent(content));
-            } else {
-                tinymce.get('fullContentBody').setContent(content);
-            }
-
+            dom.modal.classList.remove('hidden');
+            mainEditor = initializeQuill('editor-container', 'Corpo da matéria...', post.full_content_body);
             updatePreview();
         }
 
-        function closeModal() { modal.classList.add('hidden'); }
-        addPostBtn.addEventListener('click', openModalForAdd);
-        closeModalBtn.addEventListener('click', closeModal);
-        cancelBtn.addEventListener('click', closeModal);
-        colorPicker.addEventListener('input', (e) => colorText.value = e.target.value);
-        colorText.addEventListener('input', (e) => colorPicker.value = e.target.value);
-        statusSelect.addEventListener('change', (e) => toggleSchedule(e.target.value === 'scheduled'));
-        function toggleSchedule(show) { scheduleContainer.style.display = show ? 'block' : 'none'; }
+        function closeModal() {
+            dom.modal.classList.add('hidden');
+            mainEditor = null;
+            pageEditors.clear();
+        }
+        dom.addPostBtn.addEventListener('click', openModalForAdd);
+        dom.closeModalBtn.addEventListener('click', closeModal);
+        dom.cancelBtn.addEventListener('click', closeModal);
+        dom.colorPicker.addEventListener('input', (e) => dom.colorText.value = e.target.value);
+        dom.colorText.addEventListener('input', (e) => dom.colorPicker.value = e.target.value);
+        dom.statusSelect.addEventListener('change', (e) => toggleSchedule(e.target.value === 'scheduled'));
+        function toggleSchedule(show) { dom.scheduleContainer.style.display = show ? 'block' : 'none'; }
 
-        // --- Lógica das Páginas Dinâmicas ---
-        addPageBtn.addEventListener('click', () => addPageField());
         function addPageField(mediaUrl = '', text = '', showLink = true) {
+            const editorId = `page-editor-${Date.now()}-${Math.random()}`;
             const pageDiv = document.createElement('div');
             pageDiv.className = 'p-4 bg-white rounded-lg border space-y-4 page-item';
             pageDiv.innerHTML = `
-                <div>
-                    <label class="font-semibold text-sm text-gray-700 block mb-1">URL da Mídia da Página</label>
-                    <input type="url" class="page-media-url w-full p-2 border rounded-md" placeholder="URL da Imagem ou Vídeo (.mp4)" value="${mediaUrl}" required>
-                </div>
-                <div>
-                    <label class="font-semibold text-sm text-gray-700 block mb-1">Texto da Página</label>
-                    <textarea class="page-text w-full p-2 border rounded-md h-24" placeholder="Subtítulo/Texto (pode usar HTML)">${text}</textarea>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" class="page-show-link h-4 w-4 rounded" ${showLink ? 'checked' : ''}>
-                        <label class="text-sm">Mostrar link para Matéria</label>
-                    </div>
-                    <button type="button" class="remove-page-btn text-red-500 hover:text-red-700 font-bold">Remover</button>
-                </div>`;
-            pagesContainer.appendChild(pageDiv);
+                <div><label class="font-semibold text-sm text-gray-700 block mb-1">URL da Mídia da Página</label><input type="url" class="page-media-url w-full p-2 border rounded-md" placeholder="URL da Imagem ou Vídeo (.mp4)" value="${mediaUrl}" required></div>
+                <div><label class="font-semibold text-sm text-gray-700 block mb-1">Texto da Página</label><div id="${editorId}" class="page-editor-container"></div></div>
+                <div class="flex items-center justify-between"><div class="flex items-center gap-2"><input type="checkbox" class="page-show-link h-4 w-4 rounded" ${showLink ? 'checked' : ''}><label class="text-sm">Mostrar link para Matéria</label></div><button type="button" class="remove-page-btn text-red-500 hover:text-red-700 font-bold">Remover</button></div>`;
+            dom.pagesContainer.appendChild(pageDiv);
+            const newEditor = initializeQuill(editorId, 'Texto da página...', text);
+            pageEditors.set(editorId, newEditor);
             updatePreview();
         }
-        pagesContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-page-btn')) { e.target.closest('.page-item').remove(); updatePreview(); }
+        dom.pagesContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-page-btn')) {
+                const pageItem = e.target.closest('.page-item');
+                const editorId = pageItem.querySelector('.page-editor-container').id;
+                pageEditors.delete(editorId);
+                pageItem.remove();
+                updatePreview();
+            }
         });
 
-        // --- Lógica de Submissão ---
-        saveBtn.addEventListener('click', async () => {
+        dom.saveBtn.addEventListener('click', async () => {
             const postId = document.getElementById('post-id').value;
-            const status = statusSelect.value;
+            const status = dom.statusSelect.value;
             const scheduleDate = document.getElementById('publishTimestamp').value;
 
-            if (status === 'scheduled' && !scheduleDate) { showError('Por favor, selecione uma data para o agendamento.'); return; }
+            if (status === 'scheduled' && !scheduleDate) { showError('Selecione uma data para o agendamento.'); return; }
 
-            const pagesData = Array.from(pagesContainer.querySelectorAll('.page-item')).map((el, index) => {
+            const pagesData = Array.from(dom.pagesContainer.querySelectorAll('.page-item')).map((el, index) => {
                 const mediaUrl = el.querySelector('.page-media-url').value;
+                const editorId = el.querySelector('.page-editor-container').id;
+                const editorInstance = pageEditors.get(editorId);
                 return { 
                     media_url: mediaUrl, 
                     media_type: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', 
-                    title: el.querySelector('.page-text').value, 
+                    title: editorInstance ? editorInstance.root.innerHTML : '', 
                     show_full_link: el.querySelector('.page-show-link').checked,
                     order_index: index
                 };
             }).filter(p => p.media_url);
 
-            if (pagesData.length === 0) { showError('Adicione pelo menos uma página ao story.'); return; }
+            if (pagesData.length === 0) { showError('Adicione pelo menos uma página.'); return; }
 
             const storyData = {
                 category: document.getElementById('category').value,
@@ -567,47 +447,39 @@
                 status: status,
                 full_content_image: document.getElementById('fullContentImage').value,
                 full_content_title: document.getElementById('fullContentTitle').value,
-                full_content_body: isTinyMceInitialized ? tinymce.get('fullContentBody').getContent() : document.getElementById('fullContentBody').value
+                full_content_body: mainEditor ? mainEditor.root.innerHTML : ''
             };
 
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Salvando...';
+            dom.saveBtn.disabled = true; dom.saveBtn.textContent = 'Salvando...';
 
             if (postId) { // UPDATE
                 const { error: storyError } = await supabaseClient.from('stories').update(storyData).match({ id: postId });
-                if (storyError) { showError('Erro ao atualizar story: ' + storyError.message); saveBtn.disabled = false; saveBtn.textContent = 'Salvar Alterações'; return; }
-                
+                if (storyError) { showError('Erro ao atualizar: ' + storyError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
                 await supabaseClient.from('story_pages').delete().match({ story_id: postId });
                 const pagesToInsert = pagesData.map(p => ({ ...p, story_id: postId }));
                 const { error: pageError } = await supabaseClient.from('story_pages').insert(pagesToInsert);
-                if (pageError) { showError('Erro ao atualizar páginas: ' + pageError.message); saveBtn.disabled = false; saveBtn.textContent = 'Salvar Alterações'; return; }
-
+                if (pageError) { showError('Erro ao atualizar páginas: ' + pageError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
             } else { // INSERT
                 const { data: newStory, error: storyError } = await supabaseClient.from('stories').insert([storyData]).select();
-                if (storyError) { showError('Erro ao criar story: ' + storyError.message); saveBtn.disabled = false; saveBtn.textContent = 'Salvar Alterações'; return; }
-                
+                if (storyError) { showError('Erro ao criar: ' + storyError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
                 const newStoryId = newStory[0].id;
                 const pagesToInsert = pagesData.map(p => ({ ...p, story_id: newStoryId }));
                 const { error: pageError } = await supabaseClient.from('story_pages').insert(pagesToInsert);
-                if (pageError) { showError('Erro ao criar páginas: ' + pageError.message); saveBtn.disabled = false; saveBtn.textContent = 'Salvar Alterações'; return; }
+                if (pageError) { showError('Erro ao criar páginas: ' + pageError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
             }
             
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Salvar Alterações';
-            
+            dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar Alterações';
             await loadPosts();
             closeModal();
         });
         
-        // --- Carga Inicial ---
         try {
             await loadPosts();
             feather.replace();
         } catch(e) {
-            console.error("Erro na carga inicial", e);
-            showError("Não foi possível carregar a aplicação. Verifique o console para detalhes.");
+            showError("Não foi possível carregar a aplicação.");
         }
     });
     </script>
 </body>
-</ht
+</html>
