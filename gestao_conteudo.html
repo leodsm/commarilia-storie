@@ -19,8 +19,8 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- ATENÇÃO: Para habilitar a edição, obtenha uma API Key gratuita em https://www.tiny.cloud/ e substitua 'no-api-key' na URL abaixo -->
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- TinyMCE com sua API Key -->
+    <script src="https://cdn.tiny.cloud/1/gx87tfmvctmsknsdaj797gowrr6jkyljbu6ftne9gduylkja/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
     <style>
         body { font-family: 'Poppins', sans-serif; }
@@ -236,7 +236,6 @@
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
         // --- Configuração do Supabase ---
-        // CREDENCIAIS ATUALIZADAS COM OS DADOS FORNECIDOS
         const SUPABASE_URL = 'https://apdaldrcyugyjiwpodel.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZGFsZHJjeXVneWppd3BvZGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NDc0NDAsImV4cCI6MjA3MTIyMzQ0MH0.UX0uAej52mEC3vsk-GSRHB7jNYm0N7MEN5-rBk-6e7A';
         
@@ -419,10 +418,21 @@
         function initializeTinyMCE(callback) {
             tinymce.init({
                 selector: 'textarea#fullContentBody',
-                plugins: 'code lists link image table media autoresize',
-                toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media | code',
                 height: 300,
                 menubar: false,
+                plugins: [
+                    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+                    'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'ai', 'uploadcare', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+                ],
+                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                tinycomments_mode: 'embedded',
+                tinycomments_author: 'Author name',
+                mergetags_list: [
+                  { value: 'First.Name', title: 'First Name' },
+                  { value: 'Email', title: 'Email' },
+                ],
+                ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
+                uploadcare_public_key: '3959c1d4b2fd323fb2b8',
                 setup: (editor) => {
                     editor.on('change', updatePreview);
                     editor.on('init', () => {
@@ -600,4 +610,4 @@
     });
     </script>
 </body>
-</html>
+</ht
