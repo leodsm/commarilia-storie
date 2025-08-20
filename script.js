@@ -1,11 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Configuração do Day.js para o português do Brasil
+    dayjs.extend(dayjs_plugin_relativeTime);
+    dayjs.locale('pt-br');
 
     class App {
         constructor() {
             this.storiesData = [];
             this.api = new Api();
             this.ui = new UI();
-            this.storyPlayer = new StoryPlayer(this.ui.getStoryPlayerDOM(), (storyIndex) => this.storiesData[storyIndex]);
+            this.storyPlayer = new StoryPlayer(
+                this.ui.getStoryPlayerDOM(),
+                () => this.storiesData
+            );
         }
 
         async init() {
@@ -25,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     (storyIndex) => this.storyPlayer.open(storyIndex)
                 );
                 
+                // Renderiza a estrutura inicial do Swiper
+                this.storyPlayer.buildMainSwiper();
+
                 feather.replace();
 
             } catch (error) {
@@ -35,14 +44,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     class Api {
+        constructor() {
+            const SUPABASE_URL = 'https://apdaldrcyugyjiwpodel.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZGFsZHJjeXVneWppd3BvZGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NDc0NDAsImV4cCI6MjA3MTIyMzQ0MH0.UX0uAej52mEC3vsk-GSRHB7jNYm0N7MEN5-rBk-6e7A';
+            this.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
         async fetchPosts() {
-            const response = await fetch('posts.json');
-            if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
-            return await response.json();
+            const { data, error } = await this.supabase
+                .from('stories')
+                .select(`*, story_pages ( * )`)
+                .order('timestamp', { ascending: false });
+
+            if (error) {
+                throw new Error(`Erro ao buscar dados do Supabase: ${error.message}`);
+            }
+            
+            data.forEach(story => {
+                if (story.story_pages) {
+                    story.story_pages.sort((a, b) => a.order_index - b.order_index);
+                }
+            });
+            return data;
         }
     }
 
     class UI {
+        // ... (A classe UI permanece praticamente a mesma, apenas o getStoryPlayerDOM é atualizado)
         constructor() {
             this.dom = {
                 newsGrid: document.getElementById('news-grid'),
@@ -56,12 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderNewsGrid(storiesData) {
             if (!this.dom.newsGrid) return;
             this.dom.newsGrid.innerHTML = storiesData.map((story, index) => `
-                <div class="news-card relative rounded-xl shadow-lg overflow-hidden cursor-pointer h-[480px] group" data-story-index="${index}" role="button" tabindex="0" aria-label="Abrir story: ${story.cardTitle}">
-                    <img data-src="${story.cardImage}" alt="${story.cardTitle}" class="lazy w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-in-out">
+                <div class="news-card relative rounded-xl shadow-lg overflow-hidden cursor-pointer h-[480px] group" data-story-index="${index}" role="button" tabindex="0" aria-label="Abrir story: ${story.card_title}">
+                    <img data-src="${story.card_image}" alt="${story.card_title}" class="lazy w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-in-out">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                     <div class="absolute bottom-0 left-0 p-5 text-white z-10">
-                        <span class="text-white text-xs font-bold px-3 py-1 rounded-full" style="background-color: ${story.categoryColor};">${story.category}</span>
-                        <h2 class="text-xl font-bold mt-2 leading-tight text-shadow">${story.cardTitle}</h2>
+                        <span class="text-white text-xs font-bold px-3 py-1 rounded-full" style="background-color: ${story.category_color};">${story.category}</span>
+                        <h2 class="text-xl font-bold mt-2 leading-tight text-shadow">${story.card_title}</h2>
                     </div>
                 </div>
             `).join('');
@@ -107,20 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
             this.dom.closeMenuBtn?.addEventListener('click', toggleMenu);
             this.dom.menuOverlay?.addEventListener('click', toggleMenu);
         }
-
+        
         getStoryPlayerDOM() {
             return {
                 viewer: document.getElementById('story-viewer'),
-                container: document.getElementById('story-container'),
-                progressContainer: document.getElementById('story-progress-container'),
-                mediaContainer: document.getElementById('story-media-container'),
-                title: document.getElementById('story-title-viewer'),
-                time: document.getElementById('story-time'),
-                closeBtn: document.getElementById('close-story-btn'),
-                shareBtn: document.getElementById('share-story-btn'),
-                nextArea: document.getElementById('next-story-area'),
-                prevArea: document.getElementById('prev-story-area'),
-                swipeUp: document.getElementById('full-story-swipe-up'),
+                mainSwiperWrapper: document.getElementById('story-swiper-wrapper'),
                 modal: document.getElementById('story-modal'),
                 modalOverlay: document.getElementById('story-modal-overlay'),
                 closeModalBtn: document.getElementById('close-modal-btn'),
@@ -138,183 +157,220 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     class StoryPlayer {
-        constructor(dom, getStoryDataCallback) {
+        constructor(dom, getStoriesCallback) {
             this.dom = dom;
-            this.getStoryData = getStoryDataCallback;
-            this.state = { currentStoryIndex: 0, currentPageIndex: 0, isPaused: false };
-            this.progressTimer = null;
-            this.touchStartX = 0;
-            this.init();
+            this.getStories = getStoriesCallback;
+            this.mainSwiper = null;
+            this.activeNestedSwiper = null;
+            this.progressTimeline = null;
+            this.isMuted = true;
         }
 
-        init() {
-            // Controles básicos
-            this.dom.closeBtn?.addEventListener('click', () => this.close());
-            this.dom.nextArea?.addEventListener('click', () => this.nextPage());
-            this.dom.prevArea?.addEventListener('click', () => this.prevPage());
-            this.dom.swipeUp?.addEventListener('click', () => this.openModal());
-            this.dom.shareBtn?.addEventListener('click', () => this.shareStory());
+        buildMainSwiper() {
+            const stories = this.getStories();
+            this.dom.mainSwiperWrapper.innerHTML = stories.map((story, index) => `
+                <div class="swiper-slide" data-story-index="${index}">
+                    <div class="story-slide-content">
+                        <!-- Conteúdo do Story (cabeçalho, etc.) -->
+                        <header class="absolute top-8 left-0 right-0 w-full px-4 flex justify-between items-center z-20">
+                            <div class="flex items-center gap-3">
+                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50">
+                                <div>
+                                    <div class="font-bold text-white text-sm">ComMarília</div>
+                                    <div class="story-time text-white/80 text-xs">${this.formatTimeAgo(story.timestamp)}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="mute-story-btn text-white bg-black/30 rounded-full p-2 hidden"><i data-feather="volume-2" class="w-6 h-6"></i></button>
+                                <button class="share-story-btn text-white bg-black/30 rounded-full p-2"><i data-feather="share-2" class="w-6 h-6"></i></button>
+                                <button class="close-story-btn text-white bg-black/30 rounded-full p-2"><i data-feather="x" class="w-6 h-6"></i></button>
+                            </div>
+                        </header>
+                        <div class="story-progress-container absolute top-2 left-0 w-full flex gap-1 px-2 z-20">
+                            ${story.story_pages.map(() => `<div class="progress-bar"><div class="progress-bar-inner"></div></div>`).join('')}
+                        </div>
+                        
+                        <!-- Swiper Aninhado (Horizontal - para páginas do story) -->
+                        <div class="swiper-container-horizontal w-full h-full">
+                            <div class="swiper-wrapper">
+                                ${story.story_pages.map(page => `
+                                    <div class="swiper-slide">
+                                        ${page.media_type === 'video'
+                                            ? `<video src="${page.media_url}" class="w-full h-full object-cover" playsinline loop></video>`
+                                            : `<img src="${page.media_url}" class="w-full h-full object-cover" />`
+                                        }
+                                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
+                                            <div class="text-2xl font-bold leading-tight text-shadow">${page.title}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                         <div class="full-story-swipe-up absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer ${story.story_pages.some(p => p.show_full_link) ? '' : 'hidden'}">
+                            <div class="inline-flex flex-col items-center gap-1 text-white animate-bounce"><i data-feather="chevron-up" class="w-6 h-6"></i><span class="font-semibold text-sm">Matéria Completa</span></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            feather.replace();
+            this.setupGlobalEventListeners();
+        }
 
-            // Pausar/Retomar story
-            const pauseStory = () => { this.state.isPaused = true; };
-            const resumeStory = () => { this.state.isPaused = false; };
-            this.dom.container.addEventListener('mousedown', pauseStory);
-            this.dom.container.addEventListener('touchstart', pauseStory, { passive: true });
-            this.dom.container.addEventListener('mouseup', resumeStory);
-            this.dom.container.addEventListener('touchend', resumeStory);
-
-            // Controles de teclado e gestos
-            document.addEventListener('keydown', (e) => {
-                if (this.dom.viewer.classList.contains('open')) {
-                    if (e.key === 'ArrowRight') this.nextPage();
-                    if (e.key === 'ArrowLeft') this.prevPage();
-                    if (e.key === 'Escape') this.close();
-                }
-            });
-            this.dom.container.addEventListener('touchstart', (e) => { this.touchStartX = e.touches[0].clientX; }, { passive: true });
-            this.dom.container.addEventListener('touchend', (e) => {
-                const touchEndX = e.changedTouches[0].clientX;
-                if (this.touchStartX - touchEndX > 50) this.nextPage(); // Swipe left
-                if (touchEndX - this.touchStartX > 50) this.prevPage(); // Swipe right
-            });
-
-            // Modal
-            this.dom.closeModalBtn?.addEventListener('click', () => this.closeModal());
-            this.dom.modalOverlay?.addEventListener('click', () => this.closeModal());
+        setupGlobalEventListeners() {
+            document.querySelectorAll('.close-story-btn').forEach(btn => btn.addEventListener('click', () => this.close()));
+            document.querySelectorAll('.share-story-btn').forEach(btn => btn.addEventListener('click', (e) => this.shareStory(e)));
+            document.querySelectorAll('.mute-story-btn').forEach(btn => btn.addEventListener('click', (e) => this.toggleMute(e)));
+            document.querySelectorAll('.full-story-swipe-up').forEach(btn => btn.addEventListener('click', (e) => this.openModal(e)));
         }
 
         open(storyIndex) {
-            this.state.currentStoryIndex = storyIndex;
-            this.state.currentPageIndex = 0;
-            this.state.isPaused = false;
-            this.updatePage(true); // true para indicar que é a primeira página
-            this.dom.viewer?.classList.add('open');
+            this.dom.viewer.classList.add('open');
             document.body.style.overflow = 'hidden';
+
+            if (!this.mainSwiper) {
+                this.mainSwiper = new Swiper('.swiper-container-vertical', {
+                    direction: 'vertical',
+                    initialSlide: storyIndex,
+                    on: {
+                        init: (swiper) => this.handleStoryChange(swiper),
+                        slideChange: (swiper) => this.handleStoryChange(swiper),
+                    },
+                });
+            } else {
+                this.mainSwiper.slideTo(storyIndex, 0);
+            }
         }
 
         close() {
-            this.dom.viewer?.classList.remove('open');
+            this.dom.viewer.classList.remove('open');
             document.body.style.overflow = '';
-            this.dom.mediaContainer.innerHTML = '';
-            cancelAnimationFrame(this.progressTimer);
+            if (this.progressTimeline) this.progressTimeline.kill();
+            if (this.activeNestedSwiper) {
+                 const video = this.activeNestedSwiper.slides[this.activeNestedSwiper.activeIndex]?.querySelector('video');
+                 if(video) video.pause();
+            }
+            this.mainSwiper.destroy(true, true);
+            this.mainSwiper = null;
         }
 
-        updatePage(isFirstPage = false) {
-            const story = this.getStoryData(this.state.currentStoryIndex);
-            const page = story?.pages?.[this.state.currentPageIndex];
-            if (!page) { this.close(); return; }
-
-            if(isFirstPage) this.buildProgressBars();
-            this.updateProgressBars();
+        handleStoryChange(swiper) {
+            if (this.progressTimeline) this.progressTimeline.kill();
             
-            this.dom.mediaContainer.innerHTML = '';
-            const mediaElement = page.mediaType === 'video' ? document.createElement('video') : document.createElement('img');
-            mediaElement.src = page.mediaUrl;
-            mediaElement.className = "w-full h-full object-cover";
-            if (page.mediaType === 'video') {
-                mediaElement.autoplay = true; mediaElement.muted = true; mediaElement.loop = true; mediaElement.playsInline = true;
-            }
-            this.dom.mediaContainer.appendChild(mediaElement);
-
-            this.dom.title.innerHTML = page.text;
-            this.dom.time.textContent = this.formatTimeAgo(story.timestamp);
-            this.dom.swipeUp.style.display = page.showLink ? 'block' : 'none';
-
-            this.startProgressBar();
-        }
-
-        nextPage() {
-            const story = this.getStoryData(this.state.currentStoryIndex);
-            if (this.state.currentPageIndex < story.pages.length - 1) {
-                this.state.currentPageIndex++;
-                this.updatePage();
-            } else {
-                this.close();
-            }
-        }
-
-        prevPage() {
-            if (this.state.currentPageIndex > 0) {
-                this.state.currentPageIndex--;
-                this.updatePage();
-            }
-        }
-
-        buildProgressBars() {
-            this.dom.progressContainer.innerHTML = '';
-            const story = this.getStoryData(this.state.currentStoryIndex);
-            story.pages.forEach(() => {
-                const bar = document.createElement('div');
-                bar.className = 'progress-bar';
-                bar.innerHTML = `<div class="progress-bar-inner"></div>`;
-                this.dom.progressContainer.appendChild(bar);
-            });
-        }
-
-        updateProgressBars() {
-            const bars = this.dom.progressContainer.querySelectorAll('.progress-bar-inner');
-            bars.forEach((bar, index) => {
-                bar.classList.remove('active');
-                bar.style.transition = 'none';
-                bar.style.transform = 'scaleX(0)';
-                if (index < this.state.currentPageIndex) {
-                    bar.style.transform = 'scaleX(1)';
+            const activeStorySlide = swiper.slides[swiper.activeIndex];
+            const nestedSwiperContainer = activeStorySlide.querySelector('.swiper-container-horizontal');
+            
+            this.activeNestedSwiper = new Swiper(nestedSwiperContainer, {
+                // Bloqueia o swipe horizontal para usar as áreas de clique
+                allowTouchMove: false, 
+                on: {
+                    init: (swiper) => this.startProgress(swiper),
+                    slideChange: (swiper) => this.startProgress(swiper),
                 }
             });
-        }
 
-        startProgressBar() {
-            cancelAnimationFrame(this.progressTimer);
-            const DURATION = 5000; // 5 segundos por story
-            let startTime = null;
-            const bar = this.dom.progressContainer.querySelectorAll('.progress-bar-inner')[this.state.currentPageIndex];
-            if (!bar) return;
-
-            const animate = (timestamp) => {
-                if (!startTime) startTime = timestamp;
-                
-                if (!this.state.isPaused) {
-                    const elapsed = timestamp - startTime;
-                    const progress = Math.min(elapsed / DURATION, 1);
-                    bar.style.transform = `scaleX(${progress})`;
-
-                    if (progress >= 1) {
-                        this.nextPage();
-                        return;
-                    }
+            // Adiciona listeners para as áreas de clique (tap)
+            const storyContent = activeStorySlide.querySelector('.story-slide-content');
+            storyContent.addEventListener('pointerdown', (e) => {
+                this.progressTimeline.pause();
+                const video = this.activeNestedSwiper.slides[this.activeNestedSwiper.activeIndex]?.querySelector('video');
+                if(video) video.pause();
+            });
+            storyContent.addEventListener('pointerup', (e) => {
+                this.progressTimeline.resume();
+                const video = this.activeNestedSwiper.slides[this.activeNestedSwiper.activeIndex]?.querySelector('video');
+                if(video) video.play();
+            });
+            storyContent.addEventListener('click', (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                if (clickX < rect.width / 3) {
+                    this.activeNestedSwiper.slidePrev();
                 } else {
-                    // Se pausado, reseta o tempo inicial para o timestamp atual menos o tempo já decorrido
-                    const currentProgress = parseFloat(bar.style.transform.replace('scaleX(', ''));
-                    startTime = timestamp - (currentProgress * DURATION);
+                    this.activeNestedSwiper.slideNext();
                 }
-                this.progressTimer = requestAnimationFrame(animate);
-            };
-            this.progressTimer = requestAnimationFrame(animate);
+            });
+        }
+
+        startProgress(swiper) {
+            if (this.progressTimeline) this.progressTimeline.kill();
+
+            const DURATION = 5; // 5 segundos por página
+            const progressBars = swiper.el.closest('.story-slide-content').querySelectorAll('.progress-bar-inner');
+            
+            this.progressTimeline = gsap.timeline({
+                onComplete: () => this.mainSwiper.slideNext()
+            });
+
+            progressBars.forEach((bar, index) => {
+                gsap.set(bar, { scaleX: 0 });
+                if (index < swiper.activeIndex) {
+                    gsap.set(bar, { scaleX: 1 });
+                }
+            });
+
+            const currentBar = progressBars[swiper.activeIndex];
+            this.progressTimeline.to(currentBar, { 
+                scaleX: 1, 
+                duration: DURATION, 
+                ease: 'none',
+                onComplete: () => swiper.slideNext()
+            });
+
+            // Lógica de vídeo
+            const allVideos = swiper.el.querySelectorAll('video');
+            allVideos.forEach(v => { v.pause(); v.currentTime = 0; });
+            
+            const activeSlide = swiper.slides[swiper.activeIndex];
+            const video = activeSlide.querySelector('video');
+            const muteBtn = swiper.el.closest('.story-slide-content').querySelector('.mute-story-btn');
+            
+            muteBtn.classList.toggle('hidden', !video);
+            if (video) {
+                video.muted = this.isMuted;
+                video.play().catch(e => console.error("Video play failed:", e));
+                this.updateMuteButton(muteBtn);
+            }
         }
         
-        async shareStory() {
-            const story = this.getStoryData(this.state.currentStoryIndex);
-            const shareData = {
-                title: story.cardTitle,
-                text: `Confira esta notícia: ${story.cardTitle}`,
-                url: window.location.href // Idealmente, seria um link direto para a notícia
-            };
-            try {
-                if (navigator.share) {
-                    await navigator.share(shareData);
-                } else {
-                    // Fallback para desktop
-                    navigator.clipboard.writeText(shareData.url);
-                    alert('Link da notícia copiado para a área de transferência!');
-                }
-            } catch (err) {
-                console.error("Erro ao compartilhar:", err);
-            }
+        toggleMute(e) {
+            this.isMuted = !this.isMuted;
+            const video = this.activeNestedSwiper.slides[this.activeNestedSwiper.activeIndex]?.querySelector('video');
+            if (video) video.muted = this.isMuted;
+            this.updateMuteButton(e.currentTarget);
         }
 
-        openModal() { /* ... Lógica do modal ... */ }
-        closeModal() { /* ... Lógica do modal ... */ }
-        formatTimeAgo(isoString) { /* ... Lógica de formatação de tempo ... */ }
+        updateMuteButton(button) {
+            const icon = this.isMuted ? 'volume-x' : 'volume-2';
+            button.innerHTML = `<i data-feather="${icon}" class="w-6 h-6"></i>`;
+            feather.replace();
+        }
+
+        shareStory(e) {
+            const storyIndex = e.currentTarget.closest('.swiper-slide').dataset.storyIndex;
+            const story = this.getStories()[storyIndex];
+            // ... (lógica de compartilhamento)
+        }
+
+        openModal(e) {
+            const storyIndex = e.currentTarget.closest('.swiper-slide').dataset.storyIndex;
+            const story = this.getStories()[storyIndex];
+            if (!story) return;
+            this.dom.modalImage.src = story.full_content_image || '';
+            this.dom.modalTitle.textContent = story.full_content_title || '';
+            this.dom.modalText.innerHTML = story.full_content_body || '';
+            this.dom.modal.classList.add('open');
+            if(this.progressTimeline) this.progressTimeline.pause();
+        }
+
+        closeModal() {
+            this.dom.modal.classList.remove('open');
+            if(this.progressTimeline) this.progressTimeline.resume();
+        }
+        
+        // Função atualizada com Day.js
+        formatTimeAgo(isoString) {
+            return dayjs(isoString).fromNow();
+        }
     }
 
     const app = new App();
