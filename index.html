@@ -113,19 +113,11 @@
             opacity: 1;
         }
         #story-modal-content {
-            transform: translateY(100%);
+            transform: translateY(100%); /* Efeito de entrada de baixo para cima */
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        @media (min-width: 640px) { /* sm breakpoint */
-            #story-modal-content {
-                transform: translateY(-50px) scale(0.95);
-                opacity: 0;
-                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
-            }
-        }
         #story-modal.open #story-modal-content {
-            transform: translateY(0) scale(1);
-            opacity: 1;
+            transform: translateY(0);
         }
 
         /* --- Estilos para o conteúdo do Modal --- */
@@ -194,11 +186,24 @@
             <div id="story-progress-container" class="absolute top-2 left-0 w-full flex gap-1 px-2 z-20"></div>
             <div id="story-media-container" class="w-full h-full absolute inset-0"></div>
             
-            <header class="absolute top-8 left-0 w-full p-4 flex items-center gap-3 z-20">
-                <img id="story-publisher-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo do ComMarília">
-                <div>
-                    <div id="story-publisher-name" class="font-bold text-white text-sm">ComMarília</div>
-                    <div id="story-time" class="text-white/80 text-xs"></div>
+            <header class="absolute top-8 left-0 right-0 w-full px-4 flex justify-between items-center z-20">
+                <div class="flex items-center gap-3">
+                    <img id="story-publisher-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo do ComMarília">
+                    <div>
+                        <div id="story-publisher-name" class="font-bold text-white text-sm">ComMarília</div>
+                        <div id="story-time" class="text-white/80 text-xs"></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="mute-story-btn" class="text-white bg-black/30 rounded-full p-2 hidden" aria-label="Ativar/desativar som">
+                        <i data-feather="volume-2" class="w-6 h-6"></i>
+                    </button>
+                    <button id="share-story-btn" class="text-white bg-black/30 rounded-full p-2" aria-label="Compartilhar story">
+                        <i data-feather="share-2" class="w-6 h-6"></i>
+                    </button>
+                    <button id="close-story-btn" class="text-white bg-black/30 rounded-full p-2" aria-label="Fechar story">
+                        <i data-feather="x" class="w-6 h-6"></i>
+                    </button>
                 </div>
             </header>
 
@@ -208,18 +213,6 @@
 
             <div id="prev-story-area" class="absolute left-0 top-0 h-full w-1/3 cursor-pointer z-30" aria-label="Página anterior do story"></div>
             <div id="next-story-area" class="absolute right-0 top-0 h-full w-1/3 cursor-pointer z-30" aria-label="Próxima página do story"></div>
-            
-            <div class="absolute top-8 right-4 flex items-center gap-2 z-30">
-                 <button id="mute-story-btn" class="text-white bg-black/30 rounded-full p-2 hidden" aria-label="Ativar/desativar som">
-                    <i data-feather="volume-2" class="w-6 h-6"></i>
-                </button>
-                 <button id="share-story-btn" class="text-white bg-black/30 rounded-full p-2" aria-label="Compartilhar story">
-                    <i data-feather="share-2" class="w-6 h-6"></i>
-                </button>
-                <button id="close-story-btn" class="text-white bg-black/30 rounded-full p-2" aria-label="Fechar story">
-                    <i data-feather="x" class="w-6 h-6"></i>
-                </button>
-            </div>
            
             <div id="full-story-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer">
                 <div class="inline-flex flex-col items-center gap-1 text-white animate-bounce">
@@ -231,7 +224,7 @@
     </div>
 
     <!-- Modal da Matéria Completa -->
-    <div id="story-modal" class="fixed inset-0 z-[80] flex items-end sm:items-start sm:pt-12 justify-center" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="story-modal" class="fixed inset-0 z-[80] flex items-end sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div id="story-modal-overlay" class="absolute inset-0 bg-black bg-opacity-50"></div>
         <div id="story-modal-content" class="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] sm:max-h-[calc(100vh-4rem)] overflow-y-auto hide-scrollbar">
             <header class="sticky top-0 bg-white/80 backdrop-blur-lg p-2 z-10 text-center">
@@ -308,7 +301,6 @@
                     throw new Error(`Erro ao buscar dados do Supabase: ${error.message}`);
                 }
                 
-                // Ordena as páginas dentro de cada story
                 data.forEach(story => {
                     if (story.story_pages) {
                         story.story_pages.sort((a, b) => a.order_index - b.order_index);
@@ -419,7 +411,7 @@
                 this.dom = dom;
                 this.getStoryData = getStoryDataCallback;
                 this.getStoryCount = getStoryCountCallback;
-                this.state = { currentStoryIndex: 0, currentPageIndex: 0, isPaused: false, isMuted: true };
+                this.state = { currentStoryIndex: 0, currentPageIndex: 0, isPaused: false, isMuted: true, animationStartTime: 0, timeWhenPaused: 0 };
                 this.progressTimer = null;
                 this.touchStartX = 0;
                 this.touchStartY = 0;
@@ -458,7 +450,7 @@
                     const deltaX = touchEndX - this.touchStartX;
                     const deltaY = touchEndY - this.touchStartY;
 
-                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) { // Swipe horizontal
+                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
                         if (deltaX < 0) this.nextStory();
                         else this.prevStory();
                     }
@@ -578,28 +570,36 @@
             startProgressBar() {
                 cancelAnimationFrame(this.progressTimer);
                 const DURATION = 5000; // 5 segundos
-                let startTime = null;
                 const bar = this.dom.progressContainer.querySelectorAll('.progress-bar-inner')[this.state.currentPageIndex];
                 if (!bar) return;
-                
-                bar.style.transition = `transform ${DURATION}ms linear`;
-                bar.style.transform = 'scaleX(1)';
+
+                bar.style.transition = 'none';
+                bar.style.transform = 'scaleX(0)';
+                this.state.animationStartTime = performance.now();
+                this.state.timeWhenPaused = 0;
 
                 const animate = (timestamp) => {
-                    if (!startTime) startTime = timestamp;
-                    if (!this.state.isPaused) {
-                        const elapsed = timestamp - startTime;
-                        if (elapsed >= DURATION) {
-                            this.nextPage();
-                            return;
+                    if (this.state.isPaused) {
+                        if (this.state.timeWhenPaused === 0) {
+                            this.state.timeWhenPaused = timestamp;
                         }
-                    } else {
-                        const currentTransform = getComputedStyle(bar).transform;
-                        const matrix = new DOMMatrix(currentTransform);
-                        const currentProgress = matrix.m11;
-                        bar.style.transition = 'none';
-                        bar.style.transform = `scaleX(${currentProgress})`;
-                        startTime = timestamp - (currentProgress * DURATION);
+                        this.progressTimer = requestAnimationFrame(animate);
+                        return;
+                    }
+
+                    if (this.state.timeWhenPaused > 0) {
+                        const pauseDuration = timestamp - this.state.timeWhenPaused;
+                        this.state.animationStartTime += pauseDuration;
+                        this.state.timeWhenPaused = 0;
+                    }
+
+                    const elapsed = timestamp - this.state.animationStartTime;
+                    const progress = Math.min(elapsed / DURATION, 1);
+                    bar.style.transform = `scaleX(${progress})`;
+
+                    if (progress >= 1) {
+                        this.nextPage();
+                        return;
                     }
                     this.progressTimer = requestAnimationFrame(animate);
                 };
