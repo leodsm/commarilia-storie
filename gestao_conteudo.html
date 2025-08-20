@@ -3,509 +3,538 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Conteúdo - ComMarília (Supabase)</title>
+    <title>Editor de Conteúdo Integrado</title>
     
-    <!-- Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Bibliotecas de Edição e UI -->
+    <link href="https://releases.transloadit.com/uppy/v3.3.1/uppy.min.css" rel="stylesheet">
+    <script src="https://releases.transloadit.com/uppy/v3.3.1/uppy.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" defer></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js" defer></script>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Poppins -->
+    <!-- Recursos Padrão -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://cdn.tailwindcss.com" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
-
-    <!-- Quill.js Editor (para o corpo da matéria e fallback) -->
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-
-    <!-- ContentTools (para edição no preview) -->
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/ContentTools/1.6.1/content-tools.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ContentTools/1.6.1/content-tools.min.js"></script>
+    <script src="https://unpkg.com/feather-icons" defer></script>
 
     <style>
         body { font-family: 'Poppins', sans-serif; }
-        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.375rem; }
+        .ql-editor { min-height: 150px; font-size: 1rem; }
+        .page-editor-container .ql-editor { min-height: 80px; }
         
-        #story-preview-viewer { aspect-ratio: 9 / 16; width: 100%; max-width: 375px; max-height: 100%; border-radius: 2.5rem; border: 10px solid black; background-color: #000; }
-        #story-preview-media, #story-preview-video { object-fit: cover; }
-        #story-preview-container::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%); z-index: 1; }
-        .story-preview-indicator { width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.4); border-radius: 50%; transition: all 0.4s ease; }
-        .story-preview-indicator.active { background-color: white; transform: scale(1.2); }
-        .text-shadow { text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
-        #error-modal { transition: opacity 0.3s ease; }
+        /* Estilos para o Uppy Uploader */
+        .uppy-Dashboard-inner { border-radius: 0.5rem; border: 2px dashed #d1d5db; }
+        .uppy-Dashboard-AddFiles-title { font-size: 1rem; }
 
-        /* Estilos para o Quill Editor */
-        .ql-editor { min-height: 200px; font-size: 16px; }
-        .page-editor-container .ql-editor { min-height: 100px; }
-        .ql-toolbar { border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
-        .ql-container { border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+        /* Estilos para o SortableJS */
+        .page-item { cursor: grab; }
+        .page-item:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.4; background: #c7d2fe; }
 
-        /* Ajustes para o ContentTools */
-        [data-editable] { cursor: pointer; }
-        .ct-widget, .ct-ignition__button { z-index: 100 !important; }
+        /* Layout Principal */
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 300px 2fr 1fr; /* Sidebar | Formulário | Preview */
+            height: 100vh;
+        }
+        
+        /* Preview do Story */
+        .story-preview-container {
+            position: relative;
+            width: 100%;
+            max-width: 390px;
+            aspect-ratio: 9 / 19.5;
+            background-color: #111;
+            border-radius: 2.5rem;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            border: 10px solid black;
+        }
+        .text-shadow { text-shadow: 1px 1px 4px rgba(0,0,0,0.6); }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-800 overflow-hidden">
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-gray-900">Gerenciador de Conteúdo</h1>
-            <p class="text-gray-600 mt-1">Adicione, edite e gerencie as postagens do seu site via Supabase.</p>
-        </header>
-
-        <div class="bg-white p-6 rounded-xl shadow-md">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Posts Atuais</h2>
-                <button id="add-post-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Adicionar Novo Post</button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-white">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Título Principal</th>
-                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
-                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Páginas</th>
-                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Publicação</th>
-                            <th class="text-left py-3 px-4 uppercase font-semibold text-sm">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="posts-table-body" class="text-gray-700">
-                        <tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando posts do Supabase...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Adicionar/Editar Post -->
-    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col">
-            <header class="flex justify-between items-center p-6 border-b flex-shrink-0">
-                <h2 id="modal-title" class="text-2xl font-bold">Adicionar Novo Post</h2>
-                <button type="button" id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+    <div class="editor-grid">
+        <!-- Coluna 1: Lista de Stories -->
+        <aside class="bg-slate-100 border-r border-slate-200 flex flex-col h-full">
+            <header class="p-4 border-b border-slate-200 flex-shrink-0">
+                <h1 class="text-xl font-bold text-gray-800">Seus Stories</h1>
+                <button id="add-post-btn" class="w-full mt-2 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Criar Novo Post</button>
             </header>
-            <main class="flex-grow overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-                <form id="post-form" class="lg:col-span-2 overflow-y-auto pr-4 space-y-6">
-                    <input type="hidden" id="post-id">
-                    
-                    <div class="p-4 bg-gray-50 rounded-lg border">
-                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Dados Principais</h3>
-                        <div class="space-y-4">
-                            <div><label for="category" class="font-semibold text-sm text-gray-700 block mb-1">Categoria</label><input type="text" id="category" placeholder="Ex: TECNOLOGIA" class="w-full p-3 border rounded-lg" required></div>
-                            <div><label for="categoryColor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label><div class="flex items-center gap-2"><input type="color" id="categoryColorValue" class="h-12 w-14 p-1 border rounded-lg cursor-pointer" value="#2563eb"><input type="text" id="categoryColor" placeholder="Ex: #2563eb" class="w-full p-3 border rounded-lg" required></div></div>
-                            <div><label for="cardTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label><input type="text" id="cardTitle" placeholder="Título que aparece na página inicial" class="w-full p-3 border rounded-lg" required></div>
-                            <div><label for="cardImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem do Card</label><input type="url" id="cardImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required></div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 bg-gray-50 rounded-lg border">
-                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Matéria Completa</h3>
-                        <div class="space-y-4">
-                            <div><label for="fullContentImage" class="font-semibold text-sm text-gray-700 block mb-1">URL da Imagem da Matéria</label><input type="url" id="fullContentImage" class="w-full p-3 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg" required></div>
-                            <div><label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label><input type="text" id="fullContentTitle" placeholder="Título que aparece na matéria completa" class="w-full p-3 border rounded-lg" required></div>
-                            <div><label class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label><div id="editor-container"></div></div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 bg-gray-50 rounded-lg border">
-                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Páginas do Story</h3>
-                         <div id="pages-container" class="space-y-4"></div>
-                         <button type="button" id="add-page-btn" class="w-full mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Adicionar Página</button>
-                    </div>
+            <div id="stories-list" class="overflow-y-auto p-2">
+                <p class="text-center text-gray-500 p-8">Carregando...</p>
+            </div>
+        </aside>
 
-                    <div class="p-4 bg-gray-50 rounded-lg border">
-                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Publicação</h3>
-                        <div class="space-y-4">
-                            <div><label for="status" class="font-semibold text-sm text-gray-700 block mb-1">Status</label><select id="status" class="w-full p-3 border rounded-lg"><option value="published">Publicado</option><option value="draft">Rascunho</option><option value="scheduled">Agendado</option></select></div>
-                            <div id="schedule-container" class="hidden"><label for="publishTimestamp" class="font-semibold text-sm text-gray-700 block mb-1">Data de Agendamento</label><input type="datetime-local" id="publishTimestamp" class="w-full p-3 border rounded-lg"></div>
+        <!-- Coluna 2: Formulário de Edição -->
+        <main class="h-full overflow-y-auto">
+            <form id="post-form" class="p-6 space-y-6">
+                <input type="hidden" id="post-id">
+                
+                <!-- Dados Principais -->
+                <div class="p-4 bg-white rounded-lg border">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">Dados Principais</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="category" class="font-semibold text-sm text-gray-700 block mb-1">Categoria</label>
+                            <input type="text" id="category" class="w-full p-2 border rounded-lg" placeholder="Ex: Marília">
+                        </div>
+                        <div>
+                            <label for="categoryColor" class="font-semibold text-sm text-gray-700 block mb-1">Cor da Categoria</label>
+                            <input type="color" id="categoryColor" class="w-full p-1 h-10 border rounded-lg" value="#F4A261">
+                        </div>
+                        <div>
+                            <label for="cardTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título do Card</label>
+                            <input type="text" id="cardTitle" class="w-full p-2 border rounded-lg" placeholder="Título que aparece no card da notícia">
+                        </div>
+                        <div>
+                            <label class="font-semibold text-sm text-gray-700 block mb-1">Imagem do Card</label>
+                            <div id="uppy-card-image"></div>
+                            <input type="hidden" id="cardImage">
+                            <div class="mt-2">
+                                <label for="cardImageUrl" class="text-sm font-medium text-gray-600">Ou insira a URL da imagem:</label>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <input type="url" id="cardImageUrl" class="w-full p-2 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg">
+                                    <button type="button" class="set-image-url-btn bg-gray-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-gray-700" data-target-input="cardImage" data-source-input="cardImageUrl">Aplicar</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </form>
+                </div>
+                
+                <!-- Matéria Completa -->
+                <div class="p-4 bg-white rounded-lg border">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">Matéria Completa</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="font-semibold text-sm text-gray-700 block mb-1">Imagem da Matéria</label>
+                            <div id="uppy-full-content-image"></div>
+                            <input type="hidden" id="fullContentImage">
+                             <div class="mt-2">
+                                <label for="fullContentImageUrl" class="text-sm font-medium text-gray-600">Ou insira a URL da imagem:</label>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <input type="url" id="fullContentImageUrl" class="w-full p-2 border rounded-lg" placeholder="https://exemplo.com/imagem.jpg">
+                                    <button type="button" class="set-image-url-btn bg-gray-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-gray-700" data-target-input="fullContentImage" data-source-input="fullContentImageUrl">Aplicar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="fullContentTitle" class="font-semibold text-sm text-gray-700 block mb-1">Título da Matéria</label>
+                            <input type="text" id="fullContentTitle" class="w-full p-2 border rounded-lg" placeholder="Título completo da matéria">
+                        </div>
+                        <div>
+                            <label class="font-semibold text-sm text-gray-700 block mb-1">Corpo da Matéria</label>
+                            <div id="editor-container"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Páginas do Story -->
+                <div class="p-4 bg-white rounded-lg border">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">Páginas do Story (arraste para reordenar)</h3>
+                    <div id="pages-container" class="space-y-4"></div>
+                    <button type="button" id="add-page-btn" class="w-full mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Adicionar Página</button>
+                </div>
 
-                <aside class="lg:col-span-1 flex items-center justify-center bg-gray-200 rounded-lg p-4 h-full overflow-hidden">
-                    <div id="story-preview-viewer" class="relative w-full bg-gray-900 overflow-hidden shadow-2xl">
-                        <div id="story-preview-container" class="absolute inset-0"><img id="story-preview-media" src="https://placehold.co/375x812/111827/4b5563?text=Preview" class="w-full h-full object-cover" alt="Imagem do story"><video id="story-preview-video" class="w-full h-full object-cover hidden" playsinline autoplay muted loop src=""></video></div>
-                        <header class="absolute top-0 left-0 w-full p-4 flex items-center gap-3 z-20"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZHRoPSI0MCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNGRkZGRkYiLz48dGV4dCB4PSI1MCIgeT0iNjgiIGZvbnQtZmFtaWx5PSJQb3BwaW5zLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iOTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj48dHNwYW4gZmlsbD0iI0Y0QTkyMSI+QzwvdHNwYW4+PHRzcGFuIGZpbGw9IiMxRDM1NTciPk08L3RzcGFuPjwvdGV4dD48L3N2Zz4=" class="w-10 h-10 rounded-full border-2 border-white/50" alt="Logo ComMarília"><div><div class="font-bold text-white text-sm">ComMarília</div><div class="text-white/80 text-xs">agora mesmo</div></div></header>
-                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
-                            <div id="story-preview-text" class="text-2xl font-bold leading-tight text-shadow" data-editable data-name="story-text"></div>
+                <!-- Publicação -->
+                <div class="p-4 bg-white rounded-lg border sticky bottom-0 bg-opacity-90 backdrop-blur-sm">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">Publicação</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <label for="status" class="font-semibold text-sm text-gray-700 block mb-1">Status</label>
+                            <select id="status" class="w-full p-2 border rounded-lg">
+                                <option value="published">Publicado</option>
+                                <option value="draft">Rascunho</option>
+                                <option value="scheduled">Agendado</option>
+                            </select>
                         </div>
-                        <div id="preview-prev-area" class="absolute left-0 top-0 h-full w-1/4 cursor-pointer z-30"></div>
-                        <div id="preview-next-area" class="absolute right-0 top-0 h-full w-3/4 cursor-pointer z-30"></div>
-                        <div id="story-preview-swipe-up" class="absolute bottom-10 left-0 w-full z-30 p-6 text-center cursor-pointer hidden"><div class="inline-flex flex-col items-center gap-1 text-white animate-bounce"><i data-feather="chevron-up" class="w-6 h-6"></i><span class="font-semibold text-sm">Matéria Completa</span></div></div>
-                        <div id="story-preview-indicators" class="absolute bottom-4 left-0 w-full flex justify-center items-center gap-2 z-20"></div>
+                        <div id="schedule-container" class="hidden">
+                            <label for="timestamp" class="font-semibold text-sm text-gray-700 block mb-1">Data de Publicação</label>
+                            <input type="datetime-local" id="timestamp" class="w-full p-2 border rounded-lg">
+                        </div>
+                        <div class="flex gap-2">
+                             <button type="button" id="delete-btn" class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 hidden">Excluir</button>
+                             <button type="button" id="save-btn" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Salvar Alterações</button>
+                        </div>
                     </div>
-                </aside>
-            </main>
-            <footer class="flex justify-end items-center p-6 border-t bg-gray-50 rounded-b-lg flex-shrink-0">
-                <button type="button" id="cancel-btn" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 mr-4">Cancelar</button>
-                <button type="button" id="save-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Salvar Alterações</button>
-            </footer>
-        </div>
+                </div>
+            </form>
+        </main>
+        
+        <!-- Coluna 3: Preview Visual -->
+        <aside class="bg-slate-800 flex items-center justify-center p-8 h-full">
+           <div class="story-preview-container">
+                <div class="swiper-container w-full h-full">
+                    <div class="swiper-wrapper" id="preview-swiper-wrapper">
+                        <!-- Preview do Swiper será renderizado aqui -->
+                    </div>
+                </div>
+                <div class="swiper-button-next text-white after:!text-2xl"></div>
+                <div class="swiper-button-prev text-white after:!text-2xl"></div>
+           </div>
+        </aside>
     </div>
-
-    <!-- Modal de Erro -->
-    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-6 text-center">
-            <h3 class="text-xl font-bold text-red-600 mb-4">Ocorreu um Erro</h3>
-            <p id="error-message" class="text-gray-700 mb-6">Não foi possível carregar os dados.</p>
-            <button id="close-error-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Fechar</button>
-        </div>
-    </div>
-
 
     <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const SUPABASE_URL = 'https://apdaldrcyugyjiwpodel.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZGFsZHJjeXVneWppd3BvZGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NDc0NDAsImV4cCI6MjA3MTIyMzQ0MH0.UX0uAej52mEC3vsk-GSRHB7jNYm0N7MEN5-rBk-6e7A';
-        
-        let supabaseClient;
-        try {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch (error) {
-            showError("Não foi possível conectar ao Supabase."); return;
-        }
-
-        let postsData = [];
-        let previewPlayer;
-        let mainEditor;
-        let pageEditors = new Map();
-
-        const dom = {
-            addPostBtn: document.getElementById('add-post-btn'), tableBody: document.getElementById('posts-table-body'),
-            modal: document.getElementById('post-modal'), modalTitle: document.getElementById('modal-title'),
-            closeModalBtn: document.getElementById('close-modal-btn'), postForm: document.getElementById('post-form'),
-            addPageBtn: document.getElementById('add-page-btn'), pagesContainer: document.getElementById('pages-container'),
-            colorPicker: document.getElementById('categoryColorValue'), colorText: document.getElementById('categoryColor'),
-            statusSelect: document.getElementById('status'), scheduleContainer: document.getElementById('schedule-container'),
-            cancelBtn: document.getElementById('cancel-btn'), saveBtn: document.getElementById('save-btn'),
-            errorModal: document.getElementById('error-modal'), errorMessage: document.getElementById('error-message'),
-            closeErrorBtn: document.getElementById('close-error-btn'),
-        };
-
-        function showError(message) {
-            dom.errorMessage.textContent = message;
-            dom.errorModal.classList.remove('hidden');
-            setTimeout(() => dom.errorModal.classList.remove('opacity-0'), 10);
-        }
-        dom.closeErrorBtn.addEventListener('click', () => {
-            dom.errorModal.classList.add('opacity-0');
-            setTimeout(() => dom.errorModal.classList.add('hidden'), 300);
-        });
-
-        // --- ContentTools Initialization ---
-        const contentToolsEditor = ContentTools.EditorApp.get();
-        contentToolsEditor.init('[data-editable]', 'data-name');
-
-        contentToolsEditor.addEventListener('saved', function (ev) {
-            const regions = ev.detail().regions;
-            if (Object.keys(regions).length === 0) {
-                return;
-            }
-
-            // A única região editável é 'story-text'
-            const newContent = regions['story-text'];
-
-            const currentPageIndex = previewPlayer.currentPageIndex;
-            const pageItems = dom.pagesContainer.querySelectorAll('.page-item');
-            const currentPageForm = pageItems[currentPageIndex];
-
-            if (currentPageForm) {
-                const editorId = currentPageForm.querySelector('.page-editor-container').id;
-                const editorInstance = pageEditors.get(editorId);
-                
-                if (editorInstance && editorInstance.root.innerHTML !== newContent) {
-                    editorInstance.root.innerHTML = newContent;
+        // Plugin Uppy para Supabase (deve ser global)
+        class UppySupabase {
+            constructor(uppy, options) { this.uppy = uppy; this.opts = options; this.id = 'UppySupabase'; this.type = 'uploader'; }
+            install() { this.uppy.addUploader(this.upload.bind(this)); }
+            uninstall() { this.uppy.removeUploader(this.upload.bind(this)); }
+            async upload(fileIDs) {
+                const { supabase, folder } = this.opts;
+                for (const fileID of fileIDs) {
+                    const file = this.uppy.getFile(fileID);
+                    const fileName = `${folder}/${Date.now()}-${file.name}`;
+                    this.uppy.setFileState(fileID, { progress: { uploadStarted: Date.now() } });
+                    try {
+                        const { data, error } = await supabase.storage.from('story-media').upload(fileName, file.data, { contentType: file.type, upsert: true });
+                        if (error) throw error;
+                        const { data: { publicUrl } } = supabase.storage.from('story-media').getPublicUrl(fileName);
+                        this.uppy.setFileState(fileID, { progress: { uploadComplete: true, bytesUploaded: file.size } });
+                        this.uppy.emit('upload-success', file, { uploadURL: publicUrl });
+                    } catch (error) {
+                        this.uppy.emit('upload-error', file, error);
+                    }
                 }
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // --- CONFIGURAÇÃO INICIAL ---
+            const SUPABASE_URL = 'https://apdaldrcyugyjiwpodel.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZGFsZHJjeXVneWppd3BvZGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NDc0NDAsImV4cCI6MjA3MTIyMzQ0MH0.UX0uAej52mEC3vsk-GSRHB7jNYm0N7MEN5-rBk-6e7A';
+            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             
-            new ContentTools.FlashUI('ok');
-        });
-
-
-        class PreviewPlayer {
-            constructor(domElements) { this.dom = domElements; this.currentPost = null; this.currentPageIndex = 0; this.init(); }
-            init() { this.dom.prevArea.addEventListener('click', () => this.prevPage()); this.dom.nextArea.addEventListener('click', () => this.nextPage()); }
-            loadStory(post) { this.currentPost = post; this.currentPageIndex = 0; this.updatePage(); this.buildIndicators(); }
-            updatePage() {
-                if (!this.currentPost?.pages?.[this.currentPageIndex]) {
-                    this.dom.media.src = 'https://placehold.co/375x812/111827/4b5563?text=Preview';
-                    this.dom.media.style.display = 'block'; this.dom.video.style.display = 'none';
-                    this.dom.text.innerHTML = ''; this.dom.swipeUp.style.display = 'none';
-                    return;
-                }
-                const page = this.currentPost.pages[this.currentPageIndex];
-                this.dom.media.style.display = 'none'; this.dom.video.style.display = 'none';
-                if (page.media_type === 'video') { this.dom.video.src = page.media_url; this.dom.video.style.display = 'block'; this.dom.video.play().catch(e => {}); } 
-                else { this.dom.media.src = page.media_url || 'https://placehold.co/375x812/111827/4b5563?text=Preview'; this.dom.media.style.display = 'block'; }
-                this.dom.text.innerHTML = page.title || '';
-                this.dom.swipeUp.style.display = page.show_full_link ? 'block' : 'none';
-                this.updateIndicators();
-            }
-            nextPage() { if (this.currentPost?.pages && this.currentPageIndex < this.currentPost.pages.length - 1) { this.currentPageIndex++; this.updatePage(); } }
-            prevPage() { if (this.currentPageIndex > 0) { this.currentPageIndex--; this.updatePage(); } }
-            buildIndicators() {
-                this.dom.indicators.innerHTML = '';
-                if (!this.currentPost?.pages) return;
-                this.currentPost.pages.forEach(() => {
-                    const indicator = document.createElement('div');
-                    indicator.className = 'story-preview-indicator';
-                    this.dom.indicators.appendChild(indicator);
-                });
-                this.updateIndicators();
-            }
-            updateIndicators() {
-                const indicators = this.dom.indicators.querySelectorAll('.story-preview-indicator');
-                indicators.forEach((indicator, index) => indicator.classList.toggle('active', index === this.currentPageIndex));
-            }
-        }
-        previewPlayer = new PreviewPlayer({
-            media: document.getElementById('story-preview-media'), video: document.getElementById('story-preview-video'), text: document.getElementById('story-preview-text'),
-            swipeUp: document.getElementById('story-preview-swipe-up'), indicators: document.getElementById('story-preview-indicators'),
-            prevArea: document.getElementById('preview-prev-area'), nextArea: document.getElementById('preview-next-area'),
-        });
-        
-        function updatePreview() {
-            const pages = Array.from(dom.pagesContainer.querySelectorAll('.page-item')).map((el, index) => {
-                const mediaUrl = el.querySelector('.page-media-url').value;
-                const editorId = el.querySelector('.page-editor-container').id;
-                const editorInstance = pageEditors.get(editorId);
-                const title = editorInstance ? editorInstance.root.innerHTML : '';
-                return { 
-                    media_url: mediaUrl, 
-                    media_type: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', 
-                    title: title, 
-                    show_full_link: el.querySelector('.page-show-link').checked,
-                    order_index: index
-                };
-            });
-            previewPlayer.loadStory({ pages });
-        }
-        dom.postForm.addEventListener('input', updatePreview);
-
-        async function loadPosts() {
-            dom.tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Carregando...</td></tr>`;
-            const { data, error } = await supabaseClient.from('stories').select(`*, story_pages ( * )`).order('timestamp', { ascending: false });
-            if (error) {
-                console.error('Erro ao buscar posts:', error);
-                dom.tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-500">Falha ao carregar posts.</td></tr>`;
-                showError(`Falha ao buscar dados do Supabase: ${error.message}`);
-                return;
-            }
-            data.forEach(story => { if (story.story_pages) { story.story_pages.sort((a, b) => a.order_index - b.order_index); } });
-            postsData = data;
-            renderTable();
-        }
-
-        function formatDateTime(isoString) {
-            if (!isoString) return 'N/A';
-            const date = new Date(isoString);
-            return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        }
-        function renderTable() {
-            if (postsData.length === 0) { 
-                dom.tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nenhum post encontrado.</td></tr>`; 
-                return; 
-            }
-            dom.tableBody.innerHTML = postsData.map(post => {
-                const statusClasses = { published: 'bg-green-100 text-green-800', draft: 'bg-yellow-100 text-yellow-800', scheduled: 'bg-blue-100 text-blue-800' };
-                const statusText = { published: 'Publicado', draft: 'Rascunho', scheduled: 'Agendado' };
-                return `<tr class="border-b"><td class="py-3 px-4"><div class="font-semibold">${post.card_title}</div><div class="text-xs text-gray-500">${post.category}</div></td><td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td><td class="py-3 px-4">${post.story_pages?.length || 0}</td><td class="py-3 px-4 text-sm text-gray-600">${formatDateTime(post.timestamp)}</td><td class="py-3 px-4"><button class="edit-btn text-blue-500 hover:text-blue-700 mr-4" data-id="${post.id}">Editar</button><button class="delete-btn text-red-500 hover:text-red-700" data-id="${post.id}">Excluir</button></td></tr>`;
-            }).join('');
-        }
-
-        dom.tableBody.addEventListener('click', async (e) => {
-            const postId = e.target.dataset.id;
-            if (!postId) return;
-            if (e.target.classList.contains('edit-btn')) openModalForEdit(postId);
-            if (e.target.classList.contains('delete-btn')) {
-                const post = postsData.find(p => p.id === postId);
-                if (confirm(`Tem certeza que deseja excluir o post "${post.card_title}"?`)) {
-                    const { error: pageError } = await supabaseClient.from('story_pages').delete().match({ story_id: postId });
-                    if (pageError) { showError('Erro ao deletar páginas: ' + pageError.message); return; }
-                    const { error: storyError } = await supabaseClient.from('stories').delete().match({ id: postId });
-                    if (storyError) { showError('Erro ao deletar story: ' + storyError.message); return; }
-                    await loadPosts();
-                }
-            }
-        });
-        
-        function initializeQuill(containerId, placeholder, content = '') {
-            const Font = Quill.import('formats/font');
-            Font.whitelist = ['sans-serif', 'serif', 'monospace', 'poppins'];
-            Quill.register(Font, true);
-
-            const toolbarOptions = [
-                [{ 'font': Font.whitelist }, { 'size': ['small', false, 'large', 'huge'] }],
-                ['bold', 'italic', 'underline'],
-                [{ 'color': [] }, { 'background': [] }],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'align': [] }],
-                ['clean']
-            ];
-            const quill = new Quill(`#${containerId}`, {
-                modules: { toolbar: toolbarOptions },
-                theme: 'snow',
-                placeholder: placeholder,
-            });
-            if (content) {
-                quill.root.innerHTML = content;
-            }
-            quill.on('text-change', updatePreview);
-            return quill;
-        }
-
-        function openModalForAdd() {
-            dom.postForm.reset();
-            document.getElementById('post-id').value = '';
-            dom.modalTitle.textContent = 'Adicionar Novo Post';
-            dom.pagesContainer.innerHTML = '';
-            pageEditors.clear();
-            addPageField();
-            dom.statusSelect.value = 'published';
-            toggleSchedule(false);
-            dom.modal.classList.remove('hidden');
-            mainEditor = initializeQuill('editor-container', 'Corpo da matéria...');
-            updatePreview();
-        }
-
-        function openModalForEdit(postId) {
-            const post = postsData.find(p => p.id === postId);
-            if (!post) return;
-            dom.postForm.reset();
-            document.getElementById('post-id').value = post.id;
-            dom.modalTitle.textContent = 'Editar Post';
-            
-            document.getElementById('category').value = post.category || '';
-            dom.colorPicker.value = post.category_color || '#2563eb';
-            dom.colorText.value = post.category_color || '#2563eb';
-            document.getElementById('cardTitle').value = post.card_title || '';
-            document.getElementById('cardImage').value = post.card_image || '';
-            document.getElementById('fullContentImage').value = post.full_content_image || '';
-            document.getElementById('fullContentTitle').value = post.full_content_title || '';
-
-            dom.pagesContainer.innerHTML = '';
-            pageEditors.clear();
-            (post.story_pages || []).forEach(page => addPageField(page.media_url, page.title, page.show_full_link));
-            
-            dom.statusSelect.value = post.status || 'draft';
-            toggleSchedule(post.status === 'scheduled');
-            if(post.status === 'scheduled' && post.timestamp) {
-                document.getElementById('publishTimestamp').value = new Date(post.timestamp).toISOString().slice(0, 16);
-            } else {
-                 document.getElementById('publishTimestamp').value = '';
-            }
-
-            dom.modal.classList.remove('hidden');
-            mainEditor = initializeQuill('editor-container', 'Corpo da matéria...', post.full_content_body);
-            updatePreview();
-        }
-
-        function closeModal() {
-            dom.modal.classList.add('hidden');
-            mainEditor = null;
-            pageEditors.clear();
-        }
-        dom.addPostBtn.addEventListener('click', openModalForAdd);
-        dom.closeModalBtn.addEventListener('click', closeModal);
-        dom.cancelBtn.addEventListener('click', closeModal);
-        dom.colorPicker.addEventListener('input', (e) => dom.colorText.value = e.target.value);
-        dom.colorText.addEventListener('input', (e) => dom.colorPicker.value = e.target.value);
-        dom.statusSelect.addEventListener('change', (e) => toggleSchedule(e.target.value === 'scheduled'));
-        function toggleSchedule(show) { dom.scheduleContainer.style.display = show ? 'block' : 'none'; }
-
-        function addPageField(mediaUrl = '', text = '', showLink = true) {
-            const editorId = `page-editor-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-            const pageDiv = document.createElement('div');
-            pageDiv.className = 'p-4 bg-white rounded-lg border space-y-4 page-item';
-            pageDiv.innerHTML = `
-                <div><label class="font-semibold text-sm text-gray-700 block mb-1">URL da Mídia da Página</label><input type="url" class="page-media-url w-full p-2 border rounded-md" placeholder="URL da Imagem ou Vídeo (.mp4)" value="${mediaUrl}" required></div>
-                <div><label class="font-semibold text-sm text-gray-700 block mb-1">Texto da Página</label><div id="${editorId}" class="page-editor-container"></div></div>
-                <div class="flex items-center justify-between"><div class="flex items-center gap-2"><input type="checkbox" class="page-show-link h-4 w-4 rounded" ${showLink ? 'checked' : ''}><label class="text-sm">Mostrar link para Matéria</label></div><button type="button" class="remove-page-btn text-red-500 hover:text-red-700 font-bold">Remover</button></div>`;
-            dom.pagesContainer.appendChild(pageDiv);
-            const newEditor = initializeQuill(editorId, 'Texto da página...', text);
-            pageEditors.set(editorId, newEditor);
-            updatePreview();
-        }
-        dom.pagesContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-page-btn')) {
-                const pageItem = e.target.closest('.page-item');
-                const editorId = pageItem.querySelector('.page-editor-container').id;
-                pageEditors.delete(editorId);
-                pageItem.remove();
-                updatePreview();
-            }
-        });
-
-        dom.saveBtn.addEventListener('click', async () => {
-            const postId = document.getElementById('post-id').value;
-            const status = dom.statusSelect.value;
-            const scheduleDate = document.getElementById('publishTimestamp').value;
-
-            if (status === 'scheduled' && !scheduleDate) { showError('Selecione uma data para o agendamento.'); return; }
-
-            const pagesData = Array.from(dom.pagesContainer.querySelectorAll('.page-item')).map((el, index) => {
-                const mediaUrl = el.querySelector('.page-media-url').value;
-                const editorId = el.querySelector('.page-editor-container').id;
-                const editorInstance = pageEditors.get(editorId);
-                return { 
-                    media_url: mediaUrl, 
-                    media_type: mediaUrl.toLowerCase().endsWith('.mp4') ? 'video' : 'image', 
-                    title: editorInstance ? editorInstance.root.innerHTML : '', 
-                    show_full_link: el.querySelector('.page-show-link').checked,
-                    order_index: index
-                };
-            }).filter(p => p.media_url);
-
-            if (pagesData.length === 0) { showError('Adicione pelo menos uma página.'); return; }
-
-            const storyData = {
-                category: document.getElementById('category').value,
-                category_color: document.getElementById('categoryColor').value,
-                card_image: document.getElementById('cardImage').value,
-                card_title: document.getElementById('cardTitle').value,
-                timestamp: status === 'scheduled' ? new Date(scheduleDate).toISOString() : new Date().toISOString(),
-                status: status,
-                full_content_image: document.getElementById('fullContentImage').value,
-                full_content_title: document.getElementById('fullContentTitle').value,
-                full_content_body: mainEditor ? mainEditor.root.innerHTML : ''
+            const dom = {
+                form: document.getElementById('post-form'),
+                postId: document.getElementById('post-id'),
+                saveBtn: document.getElementById('save-btn'),
+                deleteBtn: document.getElementById('delete-btn'),
+                addPostBtn: document.getElementById('add-post-btn'),
+                storiesList: document.getElementById('stories-list'),
+                pagesContainer: document.getElementById('pages-container'),
+                addPageBtn: document.getElementById('add-page-btn'),
+                status: document.getElementById('status'),
+                scheduleContainer: document.getElementById('schedule-container'),
+                previewSwiperWrapper: document.getElementById('preview-swiper-wrapper'),
             };
 
-            dom.saveBtn.disabled = true; dom.saveBtn.textContent = 'Salvando...';
+            let mainEditor = null;
+            let pageEditors = new Map();
+            let uppyInstances = new Map();
+            let sortable = null;
+            let swiperInstance = null;
+            let currentStoryId = null;
 
-            if (postId) { // UPDATE
-                const { error: storyError } = await supabaseClient.from('stories').update(storyData).match({ id: postId });
-                if (storyError) { showError('Erro ao atualizar: ' + storyError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
-                await supabaseClient.from('story_pages').delete().match({ story_id: postId });
-                const pagesToInsert = pagesData.map(p => ({ ...p, story_id: postId }));
-                const { error: pageError } = await supabaseClient.from('story_pages').insert(pagesToInsert);
-                if (pageError) { showError('Erro ao atualizar páginas: ' + pageError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
-            } else { // INSERT
-                const { data: newStory, error: storyError } = await supabaseClient.from('stories').insert([storyData]).select();
-                if (storyError) { showError('Erro ao criar: ' + storyError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
-                const newStoryId = newStory[0].id;
-                const pagesToInsert = pagesData.map(p => ({ ...p, story_id: newStoryId }));
-                const { error: pageError } = await supabaseClient.from('story_pages').insert(pagesToInsert);
-                if (pageError) { showError('Erro ao criar páginas: ' + pageError.message); dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar'; return; }
+            // --- FUNÇÕES DE UTILIDADE ---
+            const initializeQuill = (containerId, placeholder, content = '') => {
+                const quill = new Quill(`#${containerId}`, {
+                    theme: 'snow',
+                    placeholder: placeholder,
+                    modules: { toolbar: [['bold', 'italic', 'link']] }
+                });
+                if (content) quill.root.innerHTML = content;
+                return quill;
+            };
+
+            // --- LÓGICA DO UPPY.JS ---
+            function createUppyInstance(targetId, hiddenInputId) {
+                if (uppyInstances.has(targetId)) uppyInstances.get(targetId).close();
+                
+                const uppy = new Uppy.Uppy({
+                    debug: false, autoProceed: true,
+                    restrictions: { maxNumberOfFiles: 1, allowedFileTypes: ['image/*', 'video/*'] },
+                });
+                uppy.use(Uppy.Dashboard, {
+                    inline: true, target: `#${targetId}`, proudlyDisplayPoweredByUppy: false,
+                    height: 150, note: 'Imagens ou vídeos (MP4)',
+                });
+                uppy.use(UppySupabase, { supabase: supabaseClient, folder: 'public' });
+
+                uppy.on('upload-success', (file, response) => {
+                    document.getElementById(hiddenInputId).value = response.uploadURL;
+                    updatePreview();
+                });
+                
+                uppyInstances.set(targetId, uppy);
+                return uppy;
+            }
+
+            // --- LÓGICA DE CARREGAMENTO E SELEÇÃO ---
+            async function loadStoriesList() {
+                const { data, error } = await supabaseClient.from('stories').select('id, card_title, status').order('timestamp', { ascending: false });
+                if (error) return dom.storiesList.innerHTML = `<p class="text-red-500 p-4">Erro ao carregar.</p>`;
+                
+                dom.storiesList.innerHTML = data.map(story => `
+                    <div class="p-3 rounded-lg hover:bg-slate-200 cursor-pointer story-item ${story.id == currentStoryId ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}" data-story-id="${story.id}">
+                        <h3 class="font-semibold">${story.card_title || 'Story sem título'}</h3>
+                        <p class="text-xs capitalize">${story.status}</p>
+                    </div>
+                `).join('');
             }
             
-            dom.saveBtn.disabled = false; dom.saveBtn.textContent = 'Salvar Alterações';
-            await loadPosts();
-            closeModal();
-        });
-        
-        try {
-            await loadPosts();
+            async function loadStoryForEdit(storyId) {
+                clearEditor(false); // Limpa sem recarregar a lista
+                currentStoryId = storyId;
+                
+                const { data: post, error } = await supabaseClient
+                    .from('stories').select(`*, story_pages ( * )`).eq('id', storyId).single();
+
+                if (error || !post) {
+                    alert('Post não encontrado.');
+                    clearEditor();
+                    return;
+                }
+
+                dom.postId.value = post.id;
+                document.getElementById('category').value = post.category || '';
+                document.getElementById('categoryColor').value = post.category_color || '#F4A261';
+                document.getElementById('cardTitle').value = post.card_title || '';
+                document.getElementById('cardImage').value = post.card_image || '';
+                document.getElementById('fullContentImage').value = post.full_content_image || '';
+                document.getElementById('fullContentTitle').value = post.full_content_title || '';
+                if (mainEditor) mainEditor.root.innerHTML = post.full_content_body || '';
+                dom.status.value = post.status || 'draft';
+                if (post.status === 'scheduled') {
+                    dom.scheduleContainer.classList.remove('hidden');
+                    document.getElementById('timestamp').value = post.timestamp ? post.timestamp.slice(0, 16) : '';
+                }
+
+                if (post.story_pages) {
+                    post.story_pages.sort((a, b) => a.order_index - b.order_index).forEach(page => addPageField(page));
+                }
+                
+                dom.deleteBtn.classList.remove('hidden');
+                updatePreview();
+                loadStoriesList(); // Destaca o item selecionado na lista
+            }
+
+            function clearEditor(reloadList = true) {
+                dom.form.reset();
+                dom.postId.value = '';
+                if (reloadList) currentStoryId = null;
+                dom.pagesContainer.innerHTML = '';
+                pageEditors.clear();
+                uppyInstances.forEach(uppy => uppy.close());
+                uppyInstances.clear();
+                
+                if (mainEditor) mainEditor.root.innerHTML = '';
+                else mainEditor = initializeQuill('editor-container', 'Corpo da matéria...');
+
+                createUppyInstance('uppy-card-image', 'cardImage');
+                createUppyInstance('uppy-full-content-image', 'fullContentImage');
+                
+                if (sortable) sortable.destroy();
+                sortable = new Sortable(dom.pagesContainer, { animation: 150, ghostClass: 'sortable-ghost', onEnd: updatePreview });
+                
+                dom.deleteBtn.classList.add('hidden');
+                updatePreview();
+                if (reloadList) loadStoriesList();
+            }
+
+            // --- LÓGICA DAS PÁGINAS ---
+            function addPageField(pageData = {}) {
+                const pageId = `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const editorId = `editor-${pageId}`;
+                const uppyId = `uppy-${pageId}`;
+                const hiddenInputId = `media-url-${pageId}`;
+                const urlInputId = `url-input-${pageId}`;
+
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'p-4 bg-slate-50 rounded-lg border space-y-4 page-item';
+                pageDiv.dataset.pageId = pageId;
+                pageDiv.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-500">Página</span>
+                        <button type="button" class="remove-page-btn text-red-500 hover:text-red-700 font-bold">Remover</button>
+                    </div>
+                    <div>
+                        <label class="font-semibold text-sm text-gray-700 block mb-1">Mídia da Página</label>
+                        <div id="${uppyId}"></div>
+                        <input type="hidden" class="page-media-url" id="${hiddenInputId}" value="${pageData.media_url || ''}">
+                        <div class="mt-2">
+                            <label for="${urlInputId}" class="text-sm font-medium text-gray-600">Ou insira a URL da mídia:</label>
+                            <div class="flex items-center gap-2 mt-1">
+                                <input type="url" id="${urlInputId}" class="w-full p-2 border rounded-lg" placeholder="https://exemplo.com/midia.mp4">
+                                <button type="button" class="set-image-url-btn bg-gray-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-gray-700" data-target-input="${hiddenInputId}" data-source-input="${urlInputId}">Aplicar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-semibold text-sm text-gray-700 block mb-1">Texto da Página</label>
+                        <div id="${editorId}" class="page-editor-container"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="link-${pageId}" class="page-show-link h-4 w-4 rounded" ${pageData.show_full_link !== false ? 'checked' : ''}>
+                        <label for="link-${pageId}" class="text-sm">Mostrar link para Matéria</label>
+                    </div>`;
+                dom.pagesContainer.appendChild(pageDiv);
+                
+                const newEditor = initializeQuill(editorId, 'Texto da página...', pageData.title || '');
+                newEditor.on('text-change', updatePreview);
+                pageEditors.set(editorId, newEditor);
+
+                createUppyInstance(uppyId, hiddenInputId);
+                
+                pageDiv.querySelector('.remove-page-btn').addEventListener('click', () => {
+                    pageDiv.remove();
+                    pageEditors.delete(editorId);
+                    const uppyInstance = uppyInstances.get(uppyId);
+                    if (uppyInstance) uppyInstance.close();
+                    uppyInstances.delete(uppyId);
+                    updatePreview();
+                });
+
+                updatePreview();
+            }
+
+            // --- LÓGICA DO PREVIEW VISUAL ---
+            function updatePreview() {
+                const pages = Array.from(dom.pagesContainer.querySelectorAll('.page-item')).map(el => {
+                    const pageId = el.dataset.pageId;
+                    const mediaUrl = el.querySelector(`#media-url-${pageId}`).value;
+                    const editor = pageEditors.get(`editor-${pageId}`);
+                    const title = editor ? editor.root.innerHTML : '';
+                    return { media_url: mediaUrl, title: title, media_type: mediaUrl.includes('.mp4') ? 'video' : 'image' };
+                });
+
+                if (pages.length === 0 || pages.every(p => !p.media_url)) {
+                    dom.previewSwiperWrapper.innerHTML = `<div class="swiper-slide flex items-center justify-center text-white p-4 text-center"><p>Adicione páginas e mídias para visualizar o story.</p></div>`;
+                    if (swiperInstance) swiperInstance.destroy(true, true);
+                    swiperInstance = new Swiper('.swiper-container', { navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' } });
+                    return;
+                }
+
+                dom.previewSwiperWrapper.innerHTML = pages.map(page => `
+                    <div class="swiper-slide">
+                        ${page.media_url ? (page.media_type === 'video'
+                            ? `<video src="${page.media_url}" class="absolute inset-0 w-full h-full object-cover" muted loop autoplay playsinline></video>`
+                            : `<img src="${page.media_url}" class="absolute inset-0 w-full h-full object-cover" />`
+                        ) : '<div class="w-full h-full bg-black"></div>'}
+                        <div class="absolute bottom-24 left-0 p-6 text-white z-10 w-full">
+                            <div class="text-2xl font-bold leading-tight text-shadow">${page.title}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                if (swiperInstance) swiperInstance.destroy(true, true);
+                swiperInstance = new Swiper('.swiper-container', {
+                    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+                });
+            }
+            
+            // --- LÓGICA DE DADOS (CRUD) ---
+            async function savePost() {
+                const id = dom.postId.value;
+                const statusValue = dom.status.value;
+                let timestampValue = new Date().toISOString();
+                if (statusValue === 'scheduled') {
+                    const localDate = document.getElementById('timestamp').value;
+                    if (!localDate) return alert('Por favor, defina uma data para agendamento.');
+                    timestampValue = new Date(localDate).toISOString();
+                }
+
+                const pagesData = Array.from(dom.pagesContainer.querySelectorAll('.page-item')).map((el, index) => {
+                    const pageId = el.dataset.pageId;
+                    const mediaUrl = el.querySelector('.page-media-url').value;
+                    const editor = pageEditors.get(`editor-${pageId}`);
+                    const title = editor ? editor.root.innerHTML : '';
+                    const showLink = el.querySelector('.page-show-link').checked;
+                    return { media_url: mediaUrl, title, show_full_link: showLink, media_type: mediaUrl.includes('.mp4') ? 'video' : 'image', order_index: index };
+                }).filter(p => p.media_url);
+
+                const storyData = {
+                    card_title: document.getElementById('cardTitle').value,
+                    card_image: document.getElementById('cardImage').value,
+                    category: document.getElementById('category').value,
+                    category_color: document.getElementById('categoryColor').value,
+                    full_content_title: document.getElementById('fullContentTitle').value,
+                    full_content_image: document.getElementById('fullContentImage').value,
+                    full_content_body: mainEditor.root.innerHTML,
+                    status: statusValue,
+                    timestamp: timestampValue,
+                };
+                
+                if (id) storyData.id = id;
+
+                dom.saveBtn.textContent = 'Salvando...';
+                dom.saveBtn.disabled = true;
+
+                const { data: storyResult, error: storyError } = await supabaseClient.from('stories').upsert(storyData).select().single();
+                
+                dom.saveBtn.textContent = 'Salvar Alterações';
+                dom.saveBtn.disabled = false;
+
+                if (storyError) { alert(storyError.message); return; }
+
+                await supabaseClient.from('story_pages').delete().match({ story_id: storyResult.id });
+
+                if (pagesData.length > 0) {
+                    const pagesToInsert = pagesData.map(p => ({ ...p, story_id: storyResult.id }));
+                    const { error: pagesError } = await supabaseClient.from('story_pages').insert(pagesToInsert);
+                    if (pagesError) { alert(pagesError.message); return; }
+                }
+
+                alert('Post salvo com sucesso!');
+                loadStoryForEdit(storyResult.id);
+            }
+
+            async function deletePost() {
+                const id = dom.postId.value;
+                if (!id || !confirm('Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.')) return;
+                
+                await supabaseClient.from('story_pages').delete().match({ story_id: id });
+                const { error } = await supabaseClient.from('stories').delete().match({ id });
+                
+                if (error) { alert(error.message); return; }
+                
+                alert('Post excluído com sucesso.');
+                clearEditor();
+            }
+
+            // --- EVENT LISTENERS ---
+            dom.addPostBtn.addEventListener('click', () => clearEditor(true));
+            dom.saveBtn.addEventListener('click', savePost);
+            dom.deleteBtn.addEventListener('click', deletePost);
+            dom.addPageBtn.addEventListener('click', () => addPageField());
+            dom.status.addEventListener('change', () => {
+                dom.scheduleContainer.classList.toggle('hidden', dom.status.value !== 'scheduled');
+            });
+            dom.storiesList.addEventListener('click', (e) => {
+                const storyItem = e.target.closest('.story-item');
+                if (storyItem) {
+                    loadStoryForEdit(storyItem.dataset.storyId);
+                }
+            });
+            
+            dom.form.addEventListener('click', (e) => {
+                if (e.target.classList.contains('set-image-url-btn')) {
+                    const targetInputId = e.target.dataset.targetInput;
+                    const sourceInputId = e.target.dataset.sourceInput;
+                    const url = document.getElementById(sourceInputId).value;
+                    if (url) {
+                        document.getElementById(targetInputId).value = url;
+                        updatePreview();
+                    }
+                }
+            });
+
+            dom.form.addEventListener('input', updatePreview);
+            mainEditor = initializeQuill('editor-container', 'Corpo da matéria...');
+            mainEditor.on('text-change', updatePreview);
+
+
+            // --- INICIALIZAÇÃO ---
+            clearEditor(true);
             feather.replace();
-        } catch(e) {
-            showError("Não foi possível carregar a aplicação.");
-        }
-    });
+        });
     </script>
 </body>
 </html>
