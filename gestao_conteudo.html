@@ -291,7 +291,7 @@
             dom.tableBody.innerHTML = postsData.map(post => {
                 const statusClasses = { published: 'bg-green-100 text-green-800', draft: 'bg-yellow-100 text-yellow-800', scheduled: 'bg-blue-100 text-blue-800' };
                 const statusText = { published: 'Publicado', draft: 'Rascunho', scheduled: 'Agendado' };
-                return `<tr class="border-b"><td class="py-3 px-4"><div class="font-semibold">${post.card_title}</div><div class="text-xs text-gray-500">${post.category}</div></td><td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td><td class="py-3 px-4">${post.story_pages.length}</td><td class="py-3 px-4 text-sm text-gray-600">${formatDateTime(post.timestamp)}</td><td class="py-3 px-4"><button class="edit-btn text-blue-500 hover:text-blue-700 mr-4" data-id="${post.id}">Editar</button><button class="delete-btn text-red-500 hover:text-red-700" data-id="${post.id}">Excluir</button></td></tr>`;
+                return `<tr class="border-b"><td class="py-3 px-4"><div class="font-semibold">${post.card_title}</div><div class="text-xs text-gray-500">${post.category}</div></td><td class="py-3 px-4"><span class="text-xs font-bold px-2 py-1 rounded-full ${statusClasses[post.status] || ''}">${statusText[post.status] || post.status}</span></td><td class="py-3 px-4">${post.story_pages?.length || 0}</td><td class="py-3 px-4 text-sm text-gray-600">${formatDateTime(post.timestamp)}</td><td class="py-3 px-4"><button class="edit-btn text-blue-500 hover:text-blue-700 mr-4" data-id="${post.id}">Editar</button><button class="delete-btn text-red-500 hover:text-red-700" data-id="${post.id}">Excluir</button></td></tr>`;
             }).join('');
         }
 
@@ -367,12 +367,14 @@
 
             dom.pagesContainer.innerHTML = '';
             pageEditors.clear();
-            post.story_pages.forEach(page => addPageField(page.media_url, page.title, page.show_full_link));
+            (post.story_pages || []).forEach(page => addPageField(page.media_url, page.title, page.show_full_link));
             
             dom.statusSelect.value = post.status;
             toggleSchedule(post.status === 'scheduled');
-            if(post.status === 'scheduled') {
+            if(post.status === 'scheduled' && post.timestamp) {
                 document.getElementById('publishTimestamp').value = new Date(post.timestamp).toISOString().slice(0, 16);
+            } else {
+                 document.getElementById('publishTimestamp').value = '';
             }
 
             dom.modal.classList.remove('hidden');
